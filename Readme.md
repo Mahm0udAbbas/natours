@@ -1,6 +1,6 @@
 # Natours
 
-Short description of your project.
+A Node.js and Express-based RESTful API for a tour booking application. This project is built to demonstrate and practice modern backend development using Node.js, Express, and MongoDB. It includes features for managing tours, users, reviews, and user authentication with JWT tokens.
 
 ## Installation
 
