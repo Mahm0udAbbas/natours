@@ -4,6 +4,7 @@ const toursRouter = require('./routes/toursRoutes');
 const usersRouter = require('./routes/usersRoutes');
 
 const app = express();
+app.set('query parser', 'extended');
 
 console.log(process.env.NODE_ENV);
 

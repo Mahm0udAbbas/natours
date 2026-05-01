@@ -1,16 +1,107 @@
 const Tour = require('../models/tourModel');
 
+class APIFeatures {
+  constructor(query, queryString) {
+    this.query = query;
+    this.queryString = queryString;
+    this.filterQuery = {};
+  }
+
+  filter() {
+    const queryObj = { ...this.queryString };
+    const excludedFields = ['sort', 'page', 'limit', 'fields'];
+    excludedFields.forEach((field) => delete queryObj[field]);
+
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(
+      /\b(gte|gt|lte|lt|in|ne)\b/g,
+      (match) => `$${match}`,
+    );
+
+    this.filterQuery = JSON.parse(queryStr);
+    this.query = this.query.find(this.filterQuery);
+
+    return this;
+  }
+
+  sort() {
+    if (this.queryString.sort) {
+      const sortBy = this.queryString.sort.split(',').join(' ');
+      this.query = this.query.sort(sortBy);
+    } else {
+      this.query = this.query.sort('-created_at');
+    }
+
+    return this;
+  }
+
+  limitFields() {
+    if (this.queryString.fields) {
+      const fields = this.queryString.fields.split(',').join(' ');
+      this.query = this.query.select(fields);
+    } else {
+      this.query = this.query.select('-__v');
+    }
+
+    return this;
+  }
+
+  paginate() {
+    const page = this.queryString.page * 1 || 1;
+    const limit = this.queryString.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    this.page = page;
+    this.limit = limit;
+    this.skip = skip;
+    this.query = this.query.skip(skip).limit(limit);
+
+    return this;
+  }
+}
+
 // Controllers
 
+exports.aliasTopTours = (req, res, next) => {
+  req.aliasQuery = {
+    limit: '5',
+    sort: '-ratingsAverage,price',
+    fields: 'name,price,ratingsAverage,difficulty,summary',
+  };
+
+  next();
+};
+
 exports.getAllTours = async (req, res) => {
-  const tours = await Tour.find();
-  res.status(200).json({
-    message: 'success',
-    results: tours.length,
-    data: {
-      tours,
-    },
-  });
+  try {
+    const requestQuery = { ...req.query, ...req.aliasQuery };
+
+    const features = new APIFeatures(Tour, requestQuery)
+      .filter()
+      .sort()
+      .limitFields()
+      .paginate();
+
+    if (requestQuery.page) {
+      const toursNum = await Tour.countDocuments(features.filterQuery);
+      if (features.skip >= toursNum) throw new Error('This page dose not exist');
+    }
+
+    const tours = await features.query;
+
+    res.status(200).json({
+      status: 'success',
+      results: tours.length,
+      data: {
+        tours,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: 'fail',
+      message: err.message,
+    });
+  }
 };
 
 exports.createTour = async (req, res) => {

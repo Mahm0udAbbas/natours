@@ -52,12 +52,13 @@ const tourSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now(),
+    select: false,
   },
   startDates: [Date],
 });
 
 // Explicitly create unique index
-tourSchema.index({ name: 1 }, { unique: true });
+// tourSchema.index({ name: 1 }, { unique: true });
 
 // Ensure indexes exist
 const Tour = mongoose.model('Tour', tourSchema);
