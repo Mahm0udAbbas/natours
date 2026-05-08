@@ -15,12 +15,29 @@ if (process.env.NODE_ENV === 'development') {
 
 app.use(express.json());
 // app.use((req, res, next) => {
-//   console.log('Hello form the middleware 👋');
+//   console.log('Hello form the middleware ');
 //   next();
 // });
 
 // ROUTES
 app.use('/api/v1/tours', toursRouter);
 app.use('/api/v1/users', usersRouter);
+
+app.all('*splat', (req, res, next) => {
+  const err = new Error(`Can't find ${req.originalUrl} on this server!`);
+  err.statusCode = 404;
+  err.status = 'fail';
+  next(err);
+});
+
+app.use((err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
+  err.status = err.status || 'error';
+
+  return res.status(err.statusCode).json({
+    status: err.status,
+    message: err.message,
+  });
+});
 
 module.exports = app;

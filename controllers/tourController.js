@@ -73,7 +73,6 @@ exports.aliasTopTours = (req, res, next) => {
 };
 
 exports.getAllTours = async (req, res) => {
-  console.log('getAllTours called with query:');
   try {
     const requestQuery = { ...req.query, ...req.aliasQuery };
 
