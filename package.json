@@ -6,6 +6,9 @@
   "author": "Mahmoud Abbas",
   "type": "commonjs",
   "main": "app.js",
+  "engines": {
+    "node": ">=24.13.0"
+  },
   "scripts": {
     "start": "nodemon server.js",
     "start:prod": "cross-env NODE_ENV=production nodemon server.js",
