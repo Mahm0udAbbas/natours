@@ -1,64 +1,6 @@
 const Tour = require('../models/tourModel');
-
-class APIFeatures {
-  constructor(query, queryString) {
-    this.query = query;
-    this.queryString = queryString;
-    this.filterQuery = {};
-  }
-
-  filter() {
-    const queryObj = { ...this.queryString };
-    const excludedFields = ['sort', 'page', 'limit', 'fields'];
-    excludedFields.forEach((field) => delete queryObj[field]);
-
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(
-      /\b(gte|gt|lte|lt|in|ne)\b/g,
-      (match) => `$${match}`,
-    );
-
-    this.filterQuery = JSON.parse(queryStr);
-    this.query = this.query.find(this.filterQuery);
-
-    return this;
-  }
-
-  sort() {
-    if (this.queryString.sort) {
-      const sortBy = this.queryString.sort.split(',').join(' ');
-      this.query = this.query.sort(sortBy);
-    } else {
-      this.query = this.query.sort('-created_at');
-    }
-
-    return this;
-  }
-
-  limitFields() {
-    if (this.queryString.fields) {
-      const fields = this.queryString.fields.split(',').join(' ');
-      this.query = this.query.select(fields);
-    } else {
-      this.query = this.query.select('-__v');
-    }
-
-    return this;
-  }
-
-  paginate() {
-    const page = this.queryString.page * 1 || 1;
-    const limit = this.queryString.limit * 1 || 100;
-    const skip = (page - 1) * limit;
-
-    this.page = page;
-    this.limit = limit;
-    this.skip = skip;
-    this.query = this.query.skip(skip).limit(limit);
-
-    return this;
-  }
-}
+const APIFeatures = require('../utils/apiFeatures');
+const AppError = require('../utils/appError');
 
 // Controllers
 
@@ -72,7 +14,7 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
-exports.getAllTours = async (req, res) => {
+exports.getAllTours = async (req, res, next) => {
   try {
     const requestQuery = { ...req.query, ...req.aliasQuery };
 
@@ -85,7 +27,7 @@ exports.getAllTours = async (req, res) => {
     if (requestQuery.page) {
       const toursNum = await Tour.countDocuments(features.filterQuery);
       if (features.skip >= toursNum)
-        throw new Error('This page dose not exist');
+        throw new AppError('This page does not exist', 404);
     }
 
     const tours = await features.query;
@@ -98,14 +40,11 @@ exports.getAllTours = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err.message,
-    });
+    next(err);
   }
 };
 
-exports.createTour = async (req, res) => {
+exports.createTour = async (req, res, next) => {
   try {
     const newTour = await Tour.create(req.body);
     res.status(201).json({
@@ -115,18 +54,18 @@ exports.createTour = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err.message,
-    });
+    next(err);
   }
 };
 
-exports.getTour = async (req, res) => {
-  const tourId = req.params.id;
-
-  const tour = await Tour.findById(tourId);
+exports.getTour = async (req, res, next) => {
   try {
+    const tour = await Tour.findById(req.params.id);
+
+    if (!tour) {
+      return next(new AppError('No tour found with that ID', 404));
+    }
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -134,19 +73,20 @@ exports.getTour = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err.message,
-    });
+    next(err);
   }
 };
 
-exports.updateTour = async (req, res) => {
+exports.updateTour = async (req, res, next) => {
   try {
     const updatedTour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
+
+    if (!updatedTour) {
+      return next(new AppError('No tour found with that ID', 404));
+    }
 
     res.status(200).json({
       status: 'success',
@@ -156,19 +96,20 @@ exports.updateTour = async (req, res) => {
       message: 'Tour updated successfully!',
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
+    next(err);
   }
 };
 
-exports.deleteTour = async (req, res) => {
+exports.deleteTour = async (req, res, next) => {
   try {
     const tourId = req.params.id;
     const deletedTour = await Tour.findByIdAndDelete(tourId, {
       runValidators: true,
     });
+
+    if (!deletedTour) {
+      return next(new AppError('No tour found with that ID', 404));
+    }
 
     res.status(204).json({
       status: 'success',
@@ -178,14 +119,11 @@ exports.deleteTour = async (req, res) => {
       message: 'Tour deleted successfully',
     });
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err,
-    });
+    next(err);
   }
 };
 
-exports.getToursStats = async (req, res) => {
+exports.getToursStats = async (req, res, next) => {
   try {
     const stats = await Tour.aggregate([
       {
@@ -216,14 +154,11 @@ exports.getToursStats = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err.message,
-    });
+    next(err);
   }
 };
 
-exports.getMonthlyPlan = async (req, res) => {
+exports.getMonthlyPlan = async (req, res, next) => {
   try {
     const year = req.params.year * 1;
     const plan = await Tour.aggregate([
@@ -269,9 +204,6 @@ exports.getMonthlyPlan = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err.message,
-    });
+    next(err);
   }
 };
