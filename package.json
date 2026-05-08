@@ -8,14 +8,17 @@
   "main": "app.js",
   "scripts": {
     "start": "nodemon server.js",
-    "start:prod": "cross-env NODE_ENV=production nodemon server.js"
+    "start:prod": "cross-env NODE_ENV=production nodemon server.js",
+    "debug": "ndb server.js"
   },
   "dependencies": {
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "mongoose": "^9.3.3",
     "morgan": "^1.10.1",
-    "slugify": "^1.6.9"
+    "ndb": "^0.2.4",
+    "slugify": "^1.6.9",
+    "validator": "^13.15.35"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
