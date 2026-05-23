@@ -14,10 +14,10 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 app.use(express.json());
-// app.use((req, res, next) => {
-//   console.log('Hello form the middleware ');
-//   next();
-// });
+app.use((req, res, next) => {
+  console.log(req.headers);
+  next();
+});
 
 // ROUTES
 app.use('/api/v1/tours', toursRouter);
