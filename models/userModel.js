@@ -43,6 +43,11 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: Date,
     passwordResetToken: String,
     passwordResetTokenExpire: Date,
+    active: {
+      type: Boolean,
+      default: true,
+      select: false,
+    },
   },
   { toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );
@@ -56,6 +61,11 @@ userSchema.pre('save', async function () {
 userSchema.pre('save', async function () {
   if (!this.isModified('password') || this.isNew) return;
   this.passwordChangedAt = Date.now() - 1000;
+});
+
+userSchema.pre('find', async function () {
+  // Filter out inactive users
+  this.find({ active: { $ne: false } });
 });
 
 userSchema.methods.correctPassword = async function (
