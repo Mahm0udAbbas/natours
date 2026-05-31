@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
+// const User = require('./userModel');
 // const validator = require('validator');
 
 // --- Tour Schema ---
@@ -104,6 +105,12 @@ const tourSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // this will create an embedded array of guides in the tour document, which is not efficient for large datasets
+    // guides: Array,
+
+    // this will create a reference to the User model, allowing for more efficient storage and retrieval of guide data, especially when there are many guides or when guide information changes frequently
+    guides: [{ type: mongoose.Schema.ObjectId, ref: 'User' }],
   },
   { toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );
@@ -117,21 +124,26 @@ tourSchema.virtual('durationWeeks').get(function () {
 
 //DOCUMENT MIDDLEWARE: runs before .save() and .create() but not on .insertMany() or .update()]
 
+// Generate slug from name before saving
 tourSchema.pre('save', function () {
   this.slug = slugify(this.name, { lower: true });
 });
 
-// tourSchema.post('save', function (doc) {
-//   console.log(doc);
+// Embedding guides into tour document
+// tourSchema.pre('save', async function () {
+//   const guidesPromises = this.guides.map(async (id) => await User.findById(id));
+//   this.guides = await Promise.all(guidesPromises);
 // });
 
 // QUERY MIDDLEWARE
 
+// Hide secret tours from any find query
 tourSchema.pre(/^find/, function () {
   this.find({ secretTour: { $ne: true } });
 });
 
 // AGGREGATION MIDDLEWARE
+// Hide secret tours from aggregation results
 tourSchema.pre('aggregate', function () {
   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
 });

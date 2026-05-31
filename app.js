@@ -2,8 +2,7 @@ const express = require('express');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
+const cookieParser = require('cookie-parser');
 const hpp = require('hpp');
 
 const toursRouter = require('./routes/toursRoutes');
@@ -42,11 +41,8 @@ app.use(
   }),
 );
 
-// Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
-
-// Data sanitization against XSS
-app.use(xss());
+// Cookie parser, reading cookies into req.cookies
+app.use(cookieParser());
 
 // Prevent parameter pollution
 app.use(
@@ -61,12 +57,6 @@ app.use(
     ],
   }),
 );
-
-// Test middleware
-app.use((req, res, next) => {
-  console.log(req.headers);
-  next();
-});
 
 // ROUTES
 app.use('/api/v1/tours', toursRouter);

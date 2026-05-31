@@ -17,15 +17,28 @@ const {
   updatePassword,
   protect,
 } = require('../controllers/authController');
+const {
+  validateSignup,
+  validateLogin,
+  validateForgotPassword,
+  validateResetPassword,
+  validateUpdatePassword,
+  validateUpdateMe,
+} = require('../validators/userValidators');
 
 const router = express.Router();
 
-router.post('/signup', signup);
-router.post('/login', login);
-router.post('/forgotPassword', forgotPassword);
-router.patch('/resetPassword/:token', resetPassword);
-router.patch('/updatePassword', protect, updatePassword);
-router.patch('/updateMe', protect, updateMe);
+router.post('/signup', validateSignup, signup);
+router.post('/login', validateLogin, login);
+router.post('/forgotPassword', validateForgotPassword, forgotPassword);
+router.patch('/resetPassword/:token', validateResetPassword, resetPassword);
+router.patch(
+  '/updatePassword',
+  protect,
+  validateUpdatePassword,
+  updatePassword,
+);
+router.patch('/updateMe', protect, validateUpdateMe, updateMe);
 router.delete('/deleteMe', protect, deleteMe);
 
 //User Routes
