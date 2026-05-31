@@ -20,7 +20,7 @@ mongoose
 
 //READ TOURS FORM JSON FILE
 const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/data/tours-simple.json`, {
+  fs.readFileSync(`${__dirname}/data/tours.json`, {
     encoding: 'utf-8',
   }),
 );

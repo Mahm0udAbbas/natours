@@ -1,26 +1,28 @@
 # Authentication Guide
 
-This document explains the authentication and authorization flow currently implemented in this project.
+This document describes the current authentication and authorization flow implemented in the application as of May 31, 2026.
 
-The auth system is centered around:
+Main auth files:
 
 - [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js)
 - [models/userModel.js](/f:/complete-node-bootcamp-master-work-dir/natours/models/userModel.js)
 - [routes/usersRoutes.js](/f:/complete-node-bootcamp-master-work-dir/natours/routes/usersRoutes.js)
+- [controllers/userController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/userController.js)
+- [app.js](/f:/complete-node-bootcamp-master-work-dir/natours/app.js)
 
 ## Overview
 
-The application uses JSON Web Tokens (JWT) for authentication.
+The app uses JWT-based authentication with password hashing through bcrypt.
 
 High-level flow:
 
 1. A user signs up or logs in.
-2. The server creates a JWT that contains the user's MongoDB id.
-3. The client sends that token in the `Authorization` header.
-4. Protected routes verify the token and load the current user.
-5. Some routes also apply role-based authorization.
+2. The server creates a JWT containing the user's MongoDB id.
+3. The server returns the token in the JSON response and also sets it in an HTTP-only cookie.
+4. Protected routes verify the JWT, load the current user, and attach that user to `req.user`.
+5. Some routes also apply role-based authorization with `restrictTo`.
 
-## Auth Routes
+## Auth and Account Routes
 
 These routes are mounted under:
 
@@ -28,22 +30,24 @@ These routes are mounted under:
 /api/v1/users
 ```
 
-Current auth endpoints:
+Current auth-related routes:
 
 - `POST /signup`
 - `POST /login`
 - `POST /forgotPassword`
 - `PATCH /resetPassword/:token`
+- `PATCH /updatePassword`
+- `PATCH /updateMe`
+- `DELETE /deleteMe`
 
 Defined in [routes/usersRoutes.js](/f:/complete-node-bootcamp-master-work-dir/natours/routes/usersRoutes.js).
 
-## User Model and Password Security
+## User Model and Auth Fields
 
 The user schema lives in [models/userModel.js](/f:/complete-node-bootcamp-master-work-dir/natours/models/userModel.js).
 
-Relevant fields:
+Auth-related fields:
 
-- `name`
 - `email`
 - `role`
 - `password`
@@ -51,17 +55,20 @@ Relevant fields:
 - `passwordChangedAt`
 - `passwordResetToken`
 - `passwordResetTokenExpire`
+- `active`
 
-Important auth-related rules:
+Important schema rules:
 
 - `email` must be unique
+- `email` is lowercased
 - `email` is validated with `validator.isEmail`
-- `password` has `select: false`, so it is hidden from normal queries
-- `passwordConfirm` must match `password` during document validation
+- `password` has `select: false`
+- `passwordConfirm` must match `password`
+- `active` has `select: false`
 
-### Password Hashing
+## Password Hashing
 
-Before a user is saved, the model hashes the password with bcrypt:
+Passwords are hashed in a Mongoose pre-save middleware:
 
 ```js
 userSchema.pre('save', async function () {
@@ -71,15 +78,15 @@ userSchema.pre('save', async function () {
 });
 ```
 
-What this means:
+What this gives us:
 
-- plain passwords are never stored directly
-- `passwordConfirm` is only used for validation and then removed
-- password hashing happens automatically during `save()` and `create()`
+- plain passwords are never stored in the database
+- password confirmation is only used for validation
+- both signup and password reset reuse the same hashing logic
 
-### Password Change Tracking
+## Password Change Tracking
 
-The model also updates `passwordChangedAt` when a password is changed on an existing user:
+The model also updates `passwordChangedAt` whenever an existing user changes their password:
 
 ```js
 userSchema.pre('save', async function () {
@@ -88,11 +95,11 @@ userSchema.pre('save', async function () {
 });
 ```
 
-This is used later to invalidate old JWTs after a password reset or password change.
+This supports invalidating old JWTs after password changes.
 
-## Token Creation
+## JWT Creation and Delivery
 
-JWT creation is handled by `signToken` in [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js).
+JWT signing is handled by `signToken` in [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js).
 
 ```js
 const signToken = (id) =>
@@ -101,11 +108,41 @@ const signToken = (id) =>
   });
 ```
 
-The token contains:
+JWT delivery is handled by `createSendToken`:
 
-- the user id
-- a signature created with `JWT_SECRET`
-- an expiration based on `JWT_EXPIRES_IN`
+```js
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  const cookiesOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ),
+    httpOnly: true,
+  };
+
+  if (process.env.NODE_ENV === 'production') cookiesOptions.secure = true;
+  res.cookie('jwt', token, cookiesOptions);
+  user.password = undefined;
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: { user },
+  });
+};
+```
+
+Current behavior:
+
+- the token is returned in the JSON response
+- the token is also stored in a cookie named `jwt`
+- the cookie is `httpOnly`
+- the cookie becomes `secure` in production
+
+Important note:
+
+- although the app sets a JWT cookie, the current `protect` middleware only reads the token from the `Authorization` header
+- so cookies are being issued, but not yet used for authentication checks
 
 ## Signup Flow
 
@@ -115,47 +152,20 @@ Route:
 POST /api/v1/users/signup
 ```
 
-Controller:
-
-- `signup` in [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js)
-
 Flow:
 
 1. The client sends `name`, `email`, `password`, and `passwordConfirm`.
-2. The controller creates a new `User`.
-3. Mongoose validates the schema fields.
-4. The password is hashed by the pre-save middleware.
-5. The controller generates a JWT using the new user's id.
-6. The response returns the token and the created user.
+2. The controller creates a user with `User.create(...)`.
+3. The schema validates the input.
+4. The password is hashed in the pre-save middleware.
+5. The app creates a JWT.
+6. The app returns the JWT and sets the auth cookie.
 
-Example request:
+Current implementation detail:
 
-```json
-{
-  "name": "Mahmoud Abbas",
-  "email": "mahmoud@example.com",
-  "password": "test1234",
-  "passwordConfirm": "test1234"
-}
-```
+- `signup` still accepts `role` from `req.body`
 
-Example response:
-
-```json
-{
-  "status": "success",
-  "message": "user created successfully",
-  "token": "jwt-token",
-  "data": {
-    "user": {
-      "_id": "...",
-      "name": "Mahmoud Abbas",
-      "email": "mahmoud@example.com",
-      "role": "user"
-    }
-  }
-}
-```
+That means the code currently allows the client to attempt to set the user's role during signup, which is a security risk and should usually be removed.
 
 ## Login Flow
 
@@ -165,202 +175,15 @@ Route:
 POST /api/v1/users/login
 ```
 
-Controller:
-
-- `login` in [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js)
-
 Flow:
 
 1. The client sends `email` and `password`.
-2. The controller checks that both values exist.
-3. The app finds the user by email and explicitly includes the password using `.select('+password')`.
-4. The submitted password is compared with the hashed password using bcrypt.
-5. If the credentials are valid, a JWT is returned.
+2. The controller checks that both fields exist.
+3. The app finds the user by email and explicitly includes `password` using `.select('+password')`.
+4. The entered password is compared with the stored hash using bcrypt.
+5. If valid, the app returns a JWT and sets the auth cookie.
 
-Example request:
-
-```json
-{
-  "email": "mahmoud@example.com",
-  "password": "test1234"
-}
-```
-
-Example response:
-
-```json
-{
-  "status": "success",
-  "token": "jwt-token"
-}
-```
-
-## Protected Route Flow
-
-The `protect` middleware is used to guard routes that require authentication.
-
-Defined in:
-
-- [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js)
-
-Current example:
-
-- `GET /api/v1/tours` in [routes/toursRoutes.js](/f:/complete-node-bootcamp-master-work-dir/natours/routes/toursRoutes.js)
-
-Expected request header:
-
-```http
-Authorization: Bearer your-jwt-token
-```
-
-Flow inside `protect`:
-
-1. Read the `Authorization` header.
-2. Check that it starts with `Bearer`.
-3. Extract the token from the header.
-4. Verify the token using `jwt.verify`.
-5. Decode the token to get the user id.
-6. Query the database to make sure the user still exists.
-7. Check whether the user changed their password after the token was issued.
-8. Attach the fresh user document to `req.user`.
-9. Continue to the next middleware or route handler.
-
-Possible failures:
-
-- missing token
-- invalid token
-- expired token
-- user deleted after token creation
-- password changed after token creation
-
-## Role-Based Authorization
-
-The app also supports authorization by role using `restrictTo(...roles)`.
-
-Defined in:
-
-- [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js)
-
-Typical usage pattern:
-
-```js
-protect, restrictTo('admin')
-```
-
-Current example in the codebase:
-
-- `DELETE /api/v1/tours/:id` requires:
-  - `protect`
-  - `restrictTo('admin', 'lead-guide')`
-
-That route is defined in [routes/toursRoutes.js](/f:/complete-node-bootcamp-master-work-dir/natours/routes/toursRoutes.js).
-
-This means:
-
-- the user must be logged in
-- the user role must be either `admin` or `lead-guide`
-
-## Forgot Password Flow
-
-Route:
-
-```text
-POST /api/v1/users/forgotPassword
-```
-
-Controller:
-
-- `forgotPassword` in [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js)
-
-Flow:
-
-1. The client sends an email address in the request body.
-2. The controller checks that `req.body.email` exists.
-3. The app finds the user by email.
-4. The user document generates a reset token through `createPasswordResetToken()`.
-5. The plain reset token is returned from the model method.
-6. The hashed reset token and expiry time are stored in MongoDB.
-7. The user is saved with `validateBeforeSave: false`.
-8. A reset URL is built and sent to the user's email.
-
-Example request:
-
-```json
-{
-  "email": "mahmoud@example.com"
-}
-```
-
-Reset URL format:
-
-```text
-PATCH /api/v1/users/resetPassword/:token
-```
-
-### Why the Reset Token Is Hashed
-
-The model stores a hashed version of the reset token:
-
-```js
-this.passwordResetToken = crypto
-  .createHash('sha256')
-  .update(resetToken)
-  .digest('hex');
-```
-
-This is safer because:
-
-- the raw token is only sent to the user
-- the database stores only the hashed token
-- if the database is leaked, the raw reset token is not directly exposed
-
-### Expiry Time
-
-The reset token currently expires after 10 minutes:
-
-```js
-this.passwordResetTokenExpire = Date.now() + 10 * 60 * 1000;
-```
-
-## Reset Password Flow
-
-Route:
-
-```text
-PATCH /api/v1/users/resetPassword/:token
-```
-
-Controller:
-
-- `resetPassword` in [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js)
-
-Flow:
-
-1. The client sends the reset token in the URL.
-2. The client sends `password` and `passwordConfirm` in the request body.
-3. The controller checks that both fields are present.
-4. The token from the URL is hashed using `sha256`.
-5. The app searches for a user whose stored reset token matches and whose reset token has not expired.
-6. If no matching user exists, the token is rejected.
-7. If the token is valid, the controller sets the new password and password confirmation on the user document.
-8. The reset token fields are cleared.
-9. `user.save()` triggers password hashing middleware.
-10. A fresh JWT is created and returned to the user.
-
-Example request body:
-
-```json
-{
-  "password": "newpassword123",
-  "passwordConfirm": "newpassword123"
-}
-```
-
-If `password` or `passwordConfirm` is missing, the controller returns a `400` error.
-
-## Password Comparison
-
-The user model provides `correctPassword`:
+The password comparison helper is:
 
 ```js
 userSchema.methods.correctPassword = async function (
@@ -371,79 +194,186 @@ userSchema.methods.correctPassword = async function (
 };
 ```
 
-This is used during login to compare:
+## Protect Middleware
 
-- the plain password from the request
-- the hashed password stored in the database
+Protected routes use `protect` from [controllers/authController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/authController.js).
 
-## Token Invalidation After Password Change
+Current token source:
 
-The user model provides `changedPasswordAfter`:
-
-```js
-userSchema.methods.changedPasswordAfter = async function (JWTTimeStamp) {
-  if (this.passwordChangedAt) {
-    const changedTimeStamp = parseInt(
-      this.passwordChangedAt.getTime() / 1000,
-      10,
-    );
-
-    return JWTTimeStamp < changedTimeStamp;
-  }
-  return false;
-};
+```http
+Authorization: Bearer your-jwt-token
 ```
 
-This is used in the `protect` middleware.
+Flow inside `protect`:
 
-Meaning:
+1. Read `req.headers.authorization`.
+2. Check that it starts with `Bearer`.
+3. Extract the token.
+4. Verify the token using `jwt.verify`.
+5. Decode the payload to get the user id.
+6. Load the user from the database with `User.findById(decoded.id)`.
+7. Reject if the user no longer exists.
+8. Reject if the password was changed after the token was issued.
+9. Attach the user document to `req.user`.
 
-- if a token was issued before the password was changed, that token becomes invalid
-- the user must log in again
+Protected routes currently include:
 
-## Error Handling in Auth
+- `PATCH /api/v1/users/updatePassword`
+- `PATCH /api/v1/users/updateMe`
+- `DELETE /api/v1/users/deleteMe`
+- `GET /api/v1/tours`
+- `DELETE /api/v1/tours/:id`
 
-All async auth controllers are wrapped with [utils/catchAsync.js](/f:/complete-node-bootcamp-master-work-dir/natours/utils/catchAsync.js).
+## Role-Based Authorization
+
+Role checks use `restrictTo(...roles)`.
+
+Current example:
+
+- `DELETE /api/v1/tours/:id` uses:
+  - `protect`
+  - `restrictTo('admin', 'lead-guide')`
 
 This means:
 
-- thrown async errors are forwarded to the global error handler
-- the auth controllers stay cleaner
-- operational auth errors are returned consistently through `AppError`
+- the user must be authenticated
+- the user role must be either `admin` or `lead-guide`
 
-Related files:
+## Forgot Password Flow
 
-- [utils/catchAsync.js](/f:/complete-node-bootcamp-master-work-dir/natours/utils/catchAsync.js)
-- [utils/appError.js](/f:/complete-node-bootcamp-master-work-dir/natours/utils/appError.js)
-- [controllers/errorController.js](/f:/complete-node-bootcamp-master-work-dir/natours/controllers/errorController.js)
+Route:
 
-## Current Auth-Related Notes
+```text
+POST /api/v1/users/forgotPassword
+```
 
-The current implementation is solid for learning and local development, and it already includes:
+Flow:
 
-- password hashing
-- JWT-based login
-- protected routes
-- role-based authorization middleware
-- forgot-password flow
-- reset-password flow
-- token invalidation after password changes
+1. The client sends `email`.
+2. The controller checks that the email exists in the request body.
+3. The app finds the user by email.
+4. The user model generates a random reset token.
+5. The plain token is used in the reset URL sent by email.
+6. A hashed copy of the token is stored in the database.
+7. An expiry time is stored.
+8. The user document is saved with `validateBeforeSave: false`.
 
-Current implementation notes:
+Reset token generation:
 
-- `signup` currently accepts `role` from `req.body`
-- auth currently uses bearer tokens in headers, not cookies
+```js
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
 
-## Recommended Request Sequence
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+  this.passwordResetTokenExpire = Date.now() + 10 * 60 * 1000;
 
-Typical client flow:
+  return resetToken;
+};
+```
 
-1. `POST /api/v1/users/signup` or `POST /api/v1/users/login`
-2. store the returned JWT
-3. send `Authorization: Bearer <token>` for protected requests
-4. if the token becomes invalid, log in again
-5. if the user forgets the password:
-   send `POST /api/v1/users/forgotPassword`
-6. receive the reset token by email
-7. send `PATCH /api/v1/users/resetPassword/:token` with a new password
-8. receive a fresh JWT after reset
+Why this is good:
+
+- the raw reset token is never stored in the database
+- the reset token expires after 10 minutes
+
+## Reset Password Flow
+
+Route:
+
+```text
+PATCH /api/v1/users/resetPassword/:token
+```
+
+Flow:
+
+1. The client sends the reset token in the URL.
+2. The client sends `password` and `passwordConfirm` in the request body.
+3. The controller rejects the request if either field is missing.
+4. The token from the URL is hashed using `sha256`.
+5. The app finds a user whose reset token matches and whose reset token has not expired.
+6. The app updates the password fields.
+7. The app clears `passwordResetToken` and `passwordResetTokenExpire`.
+8. `user.save()` hashes the new password and updates `passwordChangedAt`.
+9. The app logs the user in again by issuing a fresh JWT and cookie.
+
+## Update Password Flow
+
+Route:
+
+```text
+PATCH /api/v1/users/updatePassword
+```
+
+Protection:
+
+- requires `protect`
+
+Flow:
+
+1. The user must already be logged in.
+2. The request must include `currentPassword`.
+3. The request must include `password` and `passwordConfirm`.
+4. The app loads the current user with the password field included.
+5. The app checks that `currentPassword` matches the stored password.
+6. The app sets the new password values.
+7. `user.save()` hashes the password and updates `passwordChangedAt`.
+8. The app issues a fresh JWT and cookie.
+
+This is the correct pattern for password updates because it uses `save()` rather than `findByIdAndUpdate()`, so the password middleware still runs.
+
+## UpdateMe Flow
+
+Route:
+
+```text
+PATCH /api/v1/users/updateMe
+```
+
+Protection:
+
+- requires `protect`
+
+Purpose:
+
+- lets a logged-in user update only profile data
+
+Current behavior:
+
+- rejects requests containing `password` or `passwordConfirm`
+- only allows updating `name` and `email`
+
+This is good separation because password changes are forced through the dedicated `updatePassword` route.
+
+## DeleteMe Flow
+
+Route:
+
+```text
+DELETE /api/v1/users/deleteMe
+```
+
+Protection:
+
+- requires `protect`
+
+Current behavior:
+
+- does not fully delete the user document
+- sets `active: false` instead
+
+This is a soft-delete pattern.
+
+The user model also has:
+
+
+
+
+
+
+
+
+
+
