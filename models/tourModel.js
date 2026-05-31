@@ -142,6 +142,15 @@ tourSchema.pre(/^find/, function () {
   this.find({ secretTour: { $ne: true } });
 });
 
+// Populate guides field with user data, excluding __v and passwordChangedAt fields
+
+tourSchema.pre(/^find/, function () {
+  this.populate({
+    path: 'guides',
+    select: '-__v -passwordChangedAt',
+  });
+});
+
 // AGGREGATION MIDDLEWARE
 // Hide secret tours from aggregation results
 tourSchema.pre('aggregate', function () {
