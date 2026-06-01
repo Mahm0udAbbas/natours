@@ -108,3 +108,4 @@ const tourIdParamsSchema = z
 exports.validateTourId = validate({ params: tourIdParamsSchema });
 exports.validateCreateTour = validate({ body: createTourSchema });
 exports.validateUpdateTour = validate({ body: updateTourSchema });
+exports.plainText = plainText;
