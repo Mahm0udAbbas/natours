@@ -15,8 +15,11 @@ const {
   validateCreateTour,
   validateUpdateTour,
 } = require('../validators/tourValidators');
+const reviewsRouter = require('./reviewRoutes');
 
 const router = express.Router();
+
+router.use('/:tourId/reviews', reviewsRouter);
 
 // router.param('id', checkId);
 router.route('/top-5-cheap').get(aliasTopTours, getAllTours);
@@ -36,5 +39,9 @@ router
     validateTourId,
     deleteTour,
   );
+
+// router
+//   .route('/:tourId/reviews')
+//   .post(protect, restrictTo('user'), createReview);
 
 module.exports = router;

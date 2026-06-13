@@ -9,8 +9,11 @@ const createReviewSchema = z
       .min(1, 'Rating must be above 1.0')
       .max(5, 'Rating must be below 5.0'),
     createAt: z.coerce.date().default(new Date()),
-    tour: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid tour ID'),
-    user: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid user ID'),
+    tour: z
+      .string()
+      .regex(/^[a-fA-F0-9]{24}$/, 'Invalid tour ID')
+      .optional(),
+    // user: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Invalid user ID'),
   })
   .strict();
 
@@ -22,17 +25,28 @@ const updateReviewSchema = z
       .min(1, 'Rating must be above 1.0')
       .max(5, 'Rating must be below 5.0')
       .optional(),
-    createAt: z.coerce.date().default(new Date()),
-    tour: z
+  })
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'Please provide review or rating to update',
+  });
+
+const tourIdParamsSchema = z
+  .object({
+    tourId: z
       .string()
-      .regex(/^[a-fA-F0-9]{24}$/, 'Invalid tour ID')
+      .regex(/^[a-fA-F0-9]{24}$/, 'Tour id is invalid')
       .optional(),
-    user: z
-      .string()
-      .regex(/^[a-fA-F0-9]{24}$/, 'Invalid user ID')
-      .optional(),
+  })
+  .strict();
+
+const reviewIdParamsSchema = tourIdParamsSchema
+  .extend({
+    id: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Review id is invalid'),
   })
   .strict();
 
 exports.validateCreateReview = validate({ body: createReviewSchema });
 exports.validateUpdateReview = validate({ body: updateReviewSchema });
+exports.validateReviewTourId = validate({ params: tourIdParamsSchema });
+exports.validateReviewId = validate({ params: reviewIdParamsSchema });
