@@ -4,6 +4,8 @@ const {
   getReview,
   createReview,
   updateReview,
+  deleteReview,
+  setTourUserIds,
 } = require('../controllers/reviewController');
 const {
   validateCreateReview,
@@ -23,6 +25,7 @@ router
     restrictTo('user'),
     validateReviewTourId,
     validateCreateReview,
+    setTourUserIds,
     createReview,
   );
 router
@@ -34,6 +37,7 @@ router
     validateReviewId,
     validateUpdateReview,
     updateReview,
-  );
+  )
+  .delete(deleteReview);
 
 module.exports = router;
