@@ -33,11 +33,11 @@ router
   .get(getReview)
   .patch(
     protect,
-    restrictTo('user'),
+    restrictTo('user', 'admin'),
     validateReviewId,
     validateUpdateReview,
     updateReview,
   )
-  .delete(deleteReview);
+  .delete(protect, restrictTo('user', 'admin'), deleteReview);
 
 module.exports = router;
