@@ -87,7 +87,11 @@ exports.getAll = (Model) =>
         throw new AppError('This page does not exist', 404);
     }
 
+    // const docs = await features.query.explain();
     const docs = await features.query;
+
+    // const indexes = await Model.collection.indexes();
+    // console.log(indexes);
 
     res.status(200).json({
       status: 'success',
