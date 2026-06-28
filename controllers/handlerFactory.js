@@ -22,7 +22,7 @@ exports.deleteOne = (Model) =>
 exports.updateOne = (Model) =>
   catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     });
 
@@ -75,8 +75,8 @@ exports.getAll = (Model) =>
     if (req.params.tourId) filter = { tour: req.params.tourId };
     const requestQuery = { ...req.query, ...req.aliasQuery };
 
-    const features = new APIFeatures(Model, requestQuery)
-      .filter(filter)
+    const features = new APIFeatures(Model.find(filter), requestQuery)
+      .filter()
       .sort()
       .limitFields()
       .paginate();
