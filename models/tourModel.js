@@ -3,6 +3,27 @@ const slugify = require('slugify');
 // const User = require('./userModel');
 // const validator = require('validator');
 
+const startLocationSchema = new mongoose.Schema(
+  {
+    type: {
+      type: String,
+      default: 'Point',
+      enum: ['Point'],
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+      validate: {
+        validator: (coordinates) => coordinates.length === 2,
+        message: 'A start location must contain longitude and latitude',
+      },
+    },
+    address: String,
+    description: String,
+  },
+  { _id: false },
+);
+
 // --- Tour Schema ---
 const tourSchema = new mongoose.Schema(
   {
@@ -72,15 +93,8 @@ const tourSchema = new mongoose.Schema(
     },
     images: [String],
     startLocation: {
-      //GeoJSON
-      type: {
-        type: String,
-        defrault: 'Point',
-        enum: ['Point'],
-      },
-      coordinates: [Number],
-      address: String,
-      description: String,
+      type: startLocationSchema,
+      default: undefined,
     },
     locations: [
       {
@@ -118,6 +132,7 @@ const tourSchema = new mongoose.Schema(
 // Explicitly create unique index
 tourSchema.index({ price: 1, ratingsAverage: -1 });
 tourSchema.index({ slug: 1 });
+tourSchema.index({ startLocation: '2dsphere' });
 
 tourSchema.virtual('durationWeeks').get(function () {
   return this.duration / 7;
@@ -159,15 +174,9 @@ tourSchema.pre(/^find/, function () {
 
 // AGGREGATION MIDDLEWARE
 // Hide secret tours from aggregation results
-tourSchema.pre('aggregate', function () {
-  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
-});
-// Ensure indexes exist
+// tourSchema.pre('aggregate', function () {
+//   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+// });
 const Tour = mongoose.model('Tour', tourSchema);
-
-// Create model
-Tour.init()
-  .then(() => console.log('Indexes are ready!'))
-  .catch((err) => console.error('Index creation failed:', err.message));
 
 module.exports = Tour;

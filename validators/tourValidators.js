@@ -30,7 +30,9 @@ const booleanFromInput = z.preprocess(
 const startLocationSchema = z
   .object({
     type: z.literal('Point').optional(),
-    coordinates: z.array(coordinate).optional(),
+    coordinates: z
+      .array(coordinate)
+      .length(2, 'Coordinates must contain longitude and latitude'),
     address: optionalPlainText,
     description: optionalPlainText,
   })

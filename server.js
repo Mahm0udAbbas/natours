@@ -2,6 +2,7 @@ const dotenv = require('dotenv');
 
 dotenv.config({ path: './.env' });
 const mongoose = require('mongoose');
+mongoose.set('autoIndex', false);
 
 process.on('uncaughtException', (err) => {
   console.log(err, err.name);
@@ -10,6 +11,7 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 const app = require('./app');
+const Tour = require('./models/tourModel');
 
 // Use local DB or remote DB from .env
 const DB_LOCAL = process.env.DATABASE_LOCAL;
@@ -18,23 +20,32 @@ const DB_LOCAL = process.env.DATABASE_LOCAL;
 //   process.env.DATABASE_PASSWORD,
 // );
 
-// Connect to MongoDB
-mongoose
-  .connect(DB_LOCAL) // you can replace with DB_REMOTE if you want
-  .then(() => console.log('DB connection successful!'));
-// .catch((err) => console.error('DB connection failed:', err.message));
-
-// --- Start server ---
 const port = process.env.PORT || 3000;
-const server = app.listen(port, () => {
-  console.log(`Server listening on port ${port}...`);
-});
+let server;
+
+// Connect and create all schema indexes before accepting requests. $geoNear
+// cannot run until the startLocation 2dsphere index exists.
+const start = async () => {
+  await mongoose.connect(DB_LOCAL); // you can replace with DB_REMOTE if needed
+  console.log('DB connection successful!');
+
+  await Tour.createIndexes();
+  console.log('Indexes are ready!');
+
+  server = app.listen(port, () => {
+    console.log(`Server listening on port ${port}...`);
+  });
+};
+
+start();
 
 process.on('unhandledRejection', (err) => {
   console.log(err, err.name);
   console.log('UNHANDLED REJECTION , Shutting down');
 
-  server.close(() => {
+  if (server) {
+    server.close(() => process.exit(1));
+  } else {
     process.exit(1);
-  });
+  }
 });
