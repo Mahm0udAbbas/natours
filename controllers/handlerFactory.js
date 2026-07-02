@@ -52,13 +52,13 @@ exports.createOne = (Model) =>
 
 exports.getOne = (Model, populateOptions) =>
   catchAsync(async (req, res, next) => {
-    let query = await Model.findById(req.params.id);
+    let query = Model.findById(req.params.id);
     if (populateOptions) {
       query = query.populate(populateOptions);
     }
     const doc = await query;
-    if (!Model) {
-      return next(new AppError('No tour found with that ID', 404));
+    if (!doc) {
+      return next(new AppError('No document found with that ID', 404));
     }
 
     res.status(200).json({

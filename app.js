@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
@@ -8,16 +9,22 @@ const hpp = require('hpp');
 const toursRouter = require('./routes/toursRoutes');
 const usersRouter = require('./routes/usersRoutes');
 const reviewsRouter = require('./routes/reviewRoutes');
+const viewRouter = require('./routes/viewsRoutes');
+
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 
 // Start express app
 const app = express();
 
-// Set query parser to 'extended' to support nested query parameters
-app.set('query parser', 'extended');
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, 'views'));
 
 //--- Global Middlewares ---
+// Serving static files
+app.use(express.static(path.join(__dirname, 'public')));
+// Set query parser to 'extended' to support nested query parameters
+app.set('query parser', 'extended');
 
 // Development logging middleware
 if (process.env.NODE_ENV === 'development') {
@@ -33,7 +40,30 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // Helmet middleware, Set security HTTP headers
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        scriptSrc: ["'self'", 'https://unpkg.com'],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          'https://unpkg.com',
+          'https://fonts.googleapis.com',
+        ],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'https://unpkg.com',
+          'https://tile.openstreetmap.org',
+          'https://*.tile.openstreetmap.org',
+        ],
+        connectSrc: ["'self'", 'https://unpkg.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      },
+    },
+  }),
+);
 
 // Body parser, reading data from body into req.body
 app.use(
@@ -60,6 +90,8 @@ app.use(
 );
 
 // ROUTES
+
+app.use('/', viewRouter);
 app.use('/api/v1/tours', toursRouter);
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/reviews', reviewsRouter);
