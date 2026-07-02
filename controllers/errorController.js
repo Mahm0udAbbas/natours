@@ -8,9 +8,7 @@ const handleCastErrorDB = (err) => {
 
 // Handle duplicate fields error in MongoDB
 const handleDuplicateFieldDB = (err) => {
-  const value = err.errorResponse.errmsg.match(
-    /dup key:\s*\{\s*\w+:\s*"([^"]+)"/,
-  )[1];
+  const value = Object.values(err.keyValue || {})[0] || 'unknown';
 
   const message = `Duplicate field value: ${value}. Please use another value.`;
   return new AppError(message, 400);
@@ -66,15 +64,19 @@ module.exports = (err, req, res, next) => {
 
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, res);
-  } else if (process.env.NODE_ENV === 'production') {
+  } else if (['production', 'test'].includes(process.env.NODE_ENV)) {
     let error = err;
 
     if (error.name === 'CastError') error = handleCastErrorDB(error);
     if (error.name === 'ValidationError')
       error = handleValidationErrorDB(error);
 
-    if (error.errorResponse && error.errorResponse.code === 11000)
+    if (
+      error.code === 11000 ||
+      (error.errorResponse && error.errorResponse.code === 11000)
+    ) {
       error = handleDuplicateFieldDB(error);
+    }
 
     if (error.name === 'JsonWebTokenError') error = handleJWTError();
     if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
