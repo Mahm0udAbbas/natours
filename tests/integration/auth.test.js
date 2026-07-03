@@ -55,6 +55,15 @@ describe('authentication API', () => {
     expect(response.status).toBe(401);
   });
 
+  test('logs out by clearing the JWT cookie', async () => {
+    const response = await request(app).post('/api/v1/users/logout');
+
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe('success');
+    expect(response.headers['set-cookie'][0]).toContain('jwt=;');
+    expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
+  });
+
   test('requires authentication for the current-user endpoint', async () => {
     const response = await request(app).get('/api/v1/users/me');
     expect(response.status).toBe(401);

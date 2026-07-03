@@ -59,6 +59,17 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, res);
 });
 
+exports.logout = (req, res) => {
+  const cookieOptions = {
+    httpOnly: true,
+    sameSite: 'lax',
+  };
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.clearCookie('jwt', cookieOptions);
+  res.status(200).json({ status: 'success' });
+};
+
 exports.forgotPassword = catchAsync(async (req, res, next) => {
   if (!req.body || !req.body.email) {
     return next(new AppError('please provide you email address', 400));

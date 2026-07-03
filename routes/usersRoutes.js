@@ -13,6 +13,7 @@ const {
 const {
   signup,
   login,
+  logout,
   forgotPassword,
   resetPassword,
   updatePassword,
@@ -32,6 +33,7 @@ const router = express.Router();
 
 router.post('/signup', validateSignup, signup);
 router.post('/login', validateLogin, login);
+router.post('/logout', logout);
 router.post('/forgotPassword', validateForgotPassword, forgotPassword);
 router.patch('/resetPassword/:token', validateResetPassword, resetPassword);
 
