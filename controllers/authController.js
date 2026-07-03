@@ -143,6 +143,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   // 4) log the user in , send jwt
   createSendToken(user, 200, res);
 });
+
 exports.updatePassword = catchAsync(async (req, res, next) => {
   // 1) get user from collection
   if (!req.body || !req.body.currentPassword) {
@@ -214,6 +215,34 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   // GRANT ACCESS TO  PROTECTED ROUTES
   req.user = freshUser;
+  next();
+});
+
+// only for rendered pages , no errors
+exports.isLoggedin = catchAsync(async (req, res, next) => {
+  // 1) Getting token and check if it is there
+  let token;
+  if (req.cookies && req.cookies.jwt) {
+    token = req.cookies.jwt;
+
+    // 2) Token verification
+    const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+    // 3) check if  user still existes
+    const freshUser = await User.findById(decoded.id);
+    if (!freshUser) {
+      return next();
+    }
+
+    // 4) if the user change their password
+    if (await freshUser.changedPasswordAfter(decoded.iat)) {
+      return next();
+    }
+
+    // There is a logged in user
+    res.locals.user = freshUser;
+    return next();
+  }
   next();
 });
 

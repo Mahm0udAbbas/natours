@@ -44,21 +44,15 @@ app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        scriptSrc: ["'self'", 'https://unpkg.com'],
-        styleSrc: [
-          "'self'",
-          "'unsafe-inline'",
-          'https://unpkg.com',
-          'https://fonts.googleapis.com',
-        ],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         imgSrc: [
           "'self'",
           'data:',
-          'https://unpkg.com',
           'https://tile.openstreetmap.org',
           'https://*.tile.openstreetmap.org',
         ],
-        connectSrc: ["'self'", 'https://unpkg.com'],
+        connectSrc: ["'self'"],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       },
     },

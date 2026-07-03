@@ -1,9 +1,13 @@
 /* eslint-env browser */
-/* global L */
+/* eslint-disable */
 
-const mapElement = document.getElementById('map');
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-if (mapElement) {
+const initializeMap = () => {
+  const mapElement = document.getElementById('map');
+
+  if (!mapElement) return;
   const locations = JSON.parse(mapElement.dataset.locations || '[]');
 
   if (locations.length > 0) {
@@ -40,8 +44,8 @@ if (mapElement) {
       })
         .addTo(map)
         .bindPopup(popup, {
-          autoOpen: true,
-          // closeButton: false,
+          autoClose: false,
+          closeButton: false,
           closeOnClick: false,
         })
         .openPopup();
@@ -53,4 +57,6 @@ if (mapElement) {
       maxZoom: 12,
     });
   }
-}
+};
+
+export default initializeMap;

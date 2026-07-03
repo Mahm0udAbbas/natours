@@ -3,6 +3,12 @@
   "plugins": ["prettier"],
   "overrides": [
     {
+      "files": ["public/js/**/*.js"],
+      "env": { "browser": true },
+      "parserOptions": { "ecmaVersion": "latest", "sourceType": "module" },
+      "rules": { "node/no-unsupported-features/es-syntax": "off" }
+    },
+    {
       "files": ["tests/**/*.js"],
       "env": { "jest": true },
       "rules": { "node/no-unpublished-require": "off" }
