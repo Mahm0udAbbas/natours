@@ -2,12 +2,12 @@
 /* eslint-disable no-alert */
 /* eslint-disable */
 
-import axios from 'axios';
+import apiClient from './apiClient';
 import { showAlert } from './alerts';
 
 const login = async (email, password) => {
   try {
-    const res = await axios({
+    const res = await apiClient({
       method: 'POST',
       url: '/api/v1/users/login',
       data: {

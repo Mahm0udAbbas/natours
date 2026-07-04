@@ -1,11 +1,11 @@
 /* eslint-disable */
 
-import axios from 'axios';
+import apiClient from './apiClient';
 import { showAlert } from './alerts';
 
 const updateData = async (data) => {
   try {
-    const res = await axios({
+    const res = await apiClient({
       url: '/api/v1/users/updateMe',
       method: 'PATCH',
       data,

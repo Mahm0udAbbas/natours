@@ -9,6 +9,16 @@
       "rules": { "node/no-unsupported-features/es-syntax": "off" }
     },
     {
+      "files": ["scripts/**/*.js"],
+      "rules": {
+        "import/no-extraneous-dependencies": [
+          "error",
+          { "devDependencies": true }
+        ],
+        "node/no-unpublished-require": "off"
+      }
+    },
+    {
       "files": ["tests/**/*.js"],
       "env": { "jest": true },
       "rules": { "node/no-unpublished-require": "off" }

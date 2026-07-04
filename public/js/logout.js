@@ -1,11 +1,11 @@
 /* eslint-disable */
 
-import axios from 'axios';
+import apiClient from './apiClient';
 import { showAlert } from './alerts';
 
 const logout = async () => {
   try {
-    const response = await axios.post('/api/v1/users/logout');
+    const response = await apiClient.post('/api/v1/users/logout');
 
     if (response.data.status === 'success') {
       window.location.assign('/');
