@@ -27,11 +27,11 @@ const login = async (email, password) => {
 };
 
 const initializeLogin = () => {
-  const loginForm = document.querySelector('.form');
+  const loginForm = document.querySelector('.form--login');
   if (!loginForm) return;
 
   loginForm.addEventListener('submit', (event) => {
-    event.preventDefault();  
+    event.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
