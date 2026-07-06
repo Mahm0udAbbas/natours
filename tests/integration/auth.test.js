@@ -78,4 +78,22 @@ describe('authentication API', () => {
     expect(response.status).toBe(200);
     expect(response.body.data.data.email).toBe(user.email);
   });
+
+  test('updates the authenticated user from multipart form data', async () => {
+    const user = await createUser();
+
+    const response = await request(app)
+      .patch('/api/v1/users/updateMe')
+      .set('Authorization', authHeader(user))
+      .field('name', 'Updated User')
+      .field('email', 'UPDATED@example.com');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.user.name).toBe('Updated User');
+    expect(response.body.data.user.email).toBe('updated@example.com');
+
+    const updatedUser = await User.findById(user.id);
+    expect(updatedUser.name).toBe('Updated User');
+    expect(updatedUser.email).toBe('updated@example.com');
+  });
 });

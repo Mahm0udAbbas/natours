@@ -12,6 +12,14 @@ const updateData = async (data) => {
     });
 
     if (res.data.status === 'success') {
+      const { user } = res.data.data;
+      const photoUrl = `/img/users/${user.photo}`;
+      const accountPhoto = document.querySelector('.form__user-photo');
+      const navPhoto = document.querySelector('.nav__user-img');
+
+      if (accountPhoto) accountPhoto.src = photoUrl;
+      if (navPhoto) navPhoto.src = photoUrl;
+
       showAlert('success', 'Data updated successfully');
     }
   } catch (err) {
@@ -24,8 +32,16 @@ export const initializeUpdateSettings = () => {
   if (!userDataForm) return;
   userDataForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    const email = document.getElementById('email').value;
-    const name = document.getElementById('name').value;
-    updateData({ email, name });
+
+    const form = new FormData();
+    const photoInput = document.getElementById('photo');
+
+    form.append('email', document.getElementById('email').value);
+    form.append('name', document.getElementById('name').value);
+    if (photoInput.files.length > 0) {
+      form.append('photo', photoInput.files[0]);
+    }
+
+    updateData(form);
   });
 };
