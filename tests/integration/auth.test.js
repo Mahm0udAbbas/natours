@@ -63,9 +63,13 @@ describe('authentication API', () => {
 
   test('sends a password reset email for an existing user', async () => {
     await createUser({ email: 'reset@example.com' });
+    let resetUrl;
     const sendPasswordReset = jest
       .spyOn(Email.prototype, 'sendPasswordReset')
-      .mockResolvedValue();
+      .mockImplementation(function () {
+        resetUrl = this.url;
+        return Promise.resolve();
+      });
 
     const response = await request(app)
       .post('/api/v1/users/forgotPassword')
@@ -74,6 +78,43 @@ describe('authentication API', () => {
     expect(response.status).toBe(200);
     expect(response.body.message).toBe('Token sent to your email!');
     expect(sendPasswordReset).toHaveBeenCalledTimes(1);
+    expect(resetUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/reset-password\//);
+  });
+
+  test('resets a password with a valid token', async () => {
+    const user = await createUser({ email: 'reset-password@example.com' });
+    const resetToken = user.createPasswordResetToken();
+    await user.save({ validateBeforeSave: false });
+
+    const response = await request(app)
+      .patch(`/api/v1/users/resetPassword/${resetToken}`)
+      .send({
+        password: 'newPassword123',
+        passwordConfirm: 'newPassword123',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.token).toEqual(expect.any(String));
+
+    const updatedUser = await User.findById(user.id).select('+password');
+    expect(
+      await updatedUser.correctPassword('newPassword123', updatedUser.password),
+    ).toBe(true);
+    expect(updatedUser.passwordResetToken).toBeUndefined();
+    expect(updatedUser.passwordResetTokenExpire).toBeUndefined();
+  });
+
+  test('rejects an invalid password reset token', async () => {
+    const response = await request(app)
+      .patch(
+        '/api/v1/users/resetPassword/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      )
+      .send({
+        password: 'newPassword123',
+        passwordConfirm: 'newPassword123',
+      });
+
+    expect(response.status).toBe(400);
   });
 
   test('logs out by clearing the JWT cookie', async () => {

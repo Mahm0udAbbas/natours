@@ -10,6 +10,11 @@ block content
                     input#email.form__input(type='email', placeholder='you@example.com', required)
                 .form__group.ma-bt-md
                     label.form__label(for='password') Password
-                    input#password.form__input(type='password', placeholder='••••••••', required, minlength='8')
+                    .password-field
+                        input#password.form__input(type='password', placeholder='password123', required, minlength='8')
+                        button.password-toggle(type='button', aria-label='Show password', data-password-toggle='password')
+                            span.password-toggle__icon(aria-hidden='true')
                 .form__group
                     button.btn.btn--green Login
+                .form__group.form__helper
+                    a.form__link(href='/forgot-password') Forgot your password?

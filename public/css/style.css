@@ -1263,6 +1263,78 @@ body {
   color: #bbb;
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field .form__input {
+  padding-right: 5rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 1.4rem;
+  width: 2.8rem;
+  height: 2.8rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.password-toggle__icon,
+.password-toggle__icon::before {
+  position: absolute;
+  display: block;
+  content: '';
+}
+
+.password-toggle__icon {
+  top: 50%;
+  left: 50%;
+  width: 2rem;
+  height: 1.2rem;
+  border: 2px solid #777;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.password-toggle__icon::before {
+  top: 50%;
+  left: 50%;
+  width: 0.55rem;
+  height: 0.55rem;
+  background-color: #777;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.password-toggle--active .password-toggle__icon {
+  border-color: #55c57a;
+}
+
+.password-toggle--active .password-toggle__icon::before {
+  background-color: #55c57a;
+}
+
+.form__helper {
+  margin-top: -1rem;
+}
+
+.form__link:link,
+.form__link:visited {
+  color: #55c57a;
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.form__link:hover,
+.form__link:active {
+  color: #28b487;
+}
+
 .form__group:not(:last-child) {
   margin-bottom: 2.5rem;
 }
