@@ -59,6 +59,7 @@ module.exports = class Email {
 
     // 3) create transport and send email
 
+    console.log('NODE_ENV:', process.env.NODE_ENV);
     await this.newTransport().sendMail(mailOptions);
   }
 
