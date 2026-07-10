@@ -2,10 +2,15 @@ const request = require('supertest');
 require('../helpers/database');
 const app = require('../../app');
 const User = require('../../models/userModel');
+const Email = require('../../services/email');
 const { authHeader, createUser } = require('../helpers/factories');
 
 describe('authentication API', () => {
   test('signs up a user and returns a token and secure cookie', async () => {
+    const sendWelcomeEmail = jest
+      .spyOn(Email.prototype, 'sendWelcomeEmail')
+      .mockResolvedValue();
+
     const response = await request(app).post('/api/v1/users/signup').send({
       name: 'New User',
       email: 'NEW@example.com',
@@ -18,6 +23,7 @@ describe('authentication API', () => {
     expect(response.body.data.user.email).toBe('new@example.com');
     expect(response.headers['set-cookie'][0]).toContain('HttpOnly');
     expect(await User.countDocuments()).toBe(1);
+    expect(sendWelcomeEmail).toHaveBeenCalledTimes(1);
   });
 
   test('rejects malformed signup input', async () => {
@@ -53,6 +59,21 @@ describe('authentication API', () => {
     });
 
     expect(response.status).toBe(401);
+  });
+
+  test('sends a password reset email for an existing user', async () => {
+    await createUser({ email: 'reset@example.com' });
+    const sendPasswordReset = jest
+      .spyOn(Email.prototype, 'sendPasswordReset')
+      .mockResolvedValue();
+
+    const response = await request(app)
+      .post('/api/v1/users/forgotPassword')
+      .send({ email: 'reset@example.com' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.message).toBe('Token sent to your email!');
+    expect(sendPasswordReset).toHaveBeenCalledTimes(1);
   });
 
   test('logs out by clearing the JWT cookie', async () => {

@@ -3,6 +3,7 @@ const {
   getOverview,
   getTour,
   getLoginForm,
+  getSignupForm,
   getAccount,
 } = require('../controllers/viewsController');
 const { isLoggedin, protect } = require('../controllers/authController');
@@ -13,6 +14,7 @@ router.get('/overview', isLoggedin, getOverview);
 router.get('/tour/:slug', isLoggedin, getTour);
 router.get('/tour/:slug', isLoggedin, getTour);
 router.get('/login', isLoggedin, getLoginForm);
+router.get('/signup', isLoggedin, getSignupForm);
 router.get('/me', protect, getAccount);
 
 module.exports = router;
