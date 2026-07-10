@@ -10,6 +10,8 @@ const {
   getMonthlyPlan,
   getToursWithin,
   getDistances,
+  uploadTourImages,
+  resizeTourImages,
 } = require('../controllers/tourController');
 const { protect, restrictTo } = require('../controllers/authController');
 const {
@@ -51,6 +53,8 @@ router
     protect,
     restrictTo('admin', 'lead-guide'),
     validateTourId,
+    uploadTourImages,
+    resizeTourImages,
     validateUpdateTour,
     updateTour,
   )

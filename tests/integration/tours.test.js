@@ -53,6 +53,19 @@ describe('tour API', () => {
     expect(await Tour.countDocuments()).toBe(1);
   });
 
+  test('updates a tour from multipart form data', async () => {
+    const admin = await createUser({ role: 'admin' });
+    const tour = await createTour();
+
+    const response = await request(app)
+      .patch(`/api/v1/tours/${tour.id}`)
+      .set('Authorization', authHeader(admin))
+      .field('price', '499');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.data.price).toBe(499);
+  });
+
   test('rejects malformed GeoJSON coordinates', async () => {
     const admin = await createUser({ role: 'admin' });
     const response = await request(app)
