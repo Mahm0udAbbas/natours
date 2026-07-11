@@ -9,6 +9,7 @@ import {
 } from './passwordReset';
 import { initializeUpdateSettings } from './updateSettings';
 import { initializeUpdatePassword } from './updatePassword';
+import initializeBookTour from './bookingCheckout';
 
 initializeLogin();
 initializeSignup();
@@ -19,3 +20,4 @@ initializePasswordToggle();
 initializeUpdateSettings();
 initializeUpdatePassword();
 initializeMap();
+initializeBookTour();

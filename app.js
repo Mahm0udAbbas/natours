@@ -45,7 +45,7 @@ app.use(
   helmet({
     contentSecurityPolicy: {
       directives: {
-        scriptSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://js.stripe.com'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         imgSrc: [
           "'self'",
@@ -53,8 +53,13 @@ app.use(
           'https://tile.openstreetmap.org',
           'https://*.tile.openstreetmap.org',
         ],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", 'https://api.stripe.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        frameSrc: [
+          "'self'",
+          'https://js.stripe.com',
+          'https://hooks.stripe.com',
+        ],
       },
     },
   }),

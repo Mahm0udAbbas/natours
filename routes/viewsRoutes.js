@@ -14,7 +14,6 @@ const router = express.Router();
 router.get('/', isLoggedin, getOverview);
 router.get('/overview', isLoggedin, getOverview);
 router.get('/tour/:slug', isLoggedin, getTour);
-router.get('/tour/:slug', isLoggedin, getTour);
 router.get('/login', isLoggedin, getLoginForm);
 router.get('/signup', isLoggedin, getSignupForm);
 router.get('/forgot-password', isLoggedin, getForgotPasswordForm);

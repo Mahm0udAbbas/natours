@@ -23,6 +23,7 @@
     "test:coverage": "jest --coverage --runInBand"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^9.9.0",
     "axios": "^1.18.1",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
