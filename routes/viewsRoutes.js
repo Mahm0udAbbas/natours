@@ -7,6 +7,7 @@ const {
   getForgotPasswordForm,
   getResetPasswordForm,
   getAccount,
+  getMyTours,
 } = require('../controllers/viewsController');
 const { isLoggedin, protect } = require('../controllers/authController');
 const { createBookingCheckout } = require('../controllers/bookingController');
@@ -20,5 +21,6 @@ router.get('/signup', isLoggedin, getSignupForm);
 router.get('/forgot-password', isLoggedin, getForgotPasswordForm);
 router.get('/reset-password/:token', isLoggedin, getResetPasswordForm);
 router.get('/me', protect, getAccount);
+router.get('/my-tours', protect, getMyTours);
 
 module.exports = router;

@@ -3,10 +3,19 @@ const Stripe = require('stripe');
 const Tour = require('../models/tourModel');
 const catchAsync = require('../utils/catchAsync');
 const Booking = require('../models/bookingModel');
+const AppError = require('../utils/appError');
 
-const stripeClient = Stripe(process.env.STRIPE_SECRET_KEY);
+const getStripeClient = () => {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new AppError('Stripe is not configured on this server', 500);
+  }
+
+  return Stripe(process.env.STRIPE_SECRET_KEY);
+};
 
 exports.getCheckoutSession = catchAsync(async (req, res, next) => {
+  const stripeClient = getStripeClient();
+
   // 1) Get the currently booked tour
   const tour = await Tour.findById(req.params.tourId);
 

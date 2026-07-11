@@ -246,6 +246,7 @@ exports.isLoggedin = catchAsync(async (req, res, next) => {
     if (await freshUser.changedPasswordAfter(decoded.iat)) {
       return next();
     }
+    console.log(freshUser);
 
     // There is a logged in user
     res.locals.user = freshUser;

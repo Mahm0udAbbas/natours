@@ -28,7 +28,7 @@ const bookingSchema = new mongoose.Schema(
   { toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );
 
-bookingSchema.pre(/^find/, function (next) {
+bookingSchema.pre(/^find/, function () {
   this.populate('user').populate({
     path: 'tour',
     select: 'name',
