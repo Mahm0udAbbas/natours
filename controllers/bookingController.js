@@ -4,6 +4,7 @@ const Tour = require('../models/tourModel');
 const catchAsync = require('../utils/catchAsync');
 const Booking = require('../models/bookingModel');
 const AppError = require('../utils/appError');
+const factory = require('./handlerFactory');
 
 const getStripeClient = () => {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -18,6 +19,9 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
 
   // 1) Get the currently booked tour
   const tour = await Tour.findById(req.params.tourId);
+  if (!tour) {
+    return next(new AppError('No tour found with that ID', 404));
+  }
 
   // 2) create Checkout session
   const session = await stripeClient.checkout.sessions.create({
@@ -54,7 +58,6 @@ exports.getCheckoutSession = catchAsync(async (req, res, next) => {
 
 exports.createBookingCheckout = catchAsync(async (req, res, next) => {
   const { tour, user, price } = req.query;
-  console.log(tour, user, price);
 
   if (!tour && !user && !price) {
     return next();
@@ -63,3 +66,9 @@ exports.createBookingCheckout = catchAsync(async (req, res, next) => {
   await Booking.create({ tour, user, price });
   res.redirect(req.originalUrl.split('?')[0]);
 });
+
+exports.createBooking = factory.createOne(Booking);
+exports.getAllBookings = factory.getAll(Booking);
+exports.getBooking = factory.getOne(Booking);
+exports.deleteBooking = factory.deleteOne(Booking);
+exports.updateBooking = factory.updateOne(Booking);
