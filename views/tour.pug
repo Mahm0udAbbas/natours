@@ -1,102 +1,179 @@
 extends base
 include _reviewCard
 
-mixin overviewBox(label , text , icon)
-    .overview-box__detail
-        svg.overview-box__icon
-            use(xlink:href=`/img/icons.svg#icon-${icon}`)
-        span.overview-box__label=label
-        span.overview-box__text=text
+mixin tourFact(label, text, icon)
+    .tour-fact
+        .tour-fact__icon
+            svg(aria-hidden='true')
+                use(xlink:href=`/img/icons.svg#icon-${icon}`)
+        div
+            span= label
+            strong= text
 
 block content
-    section.section-header
-        .header__hero
-            .header__hero-overlay &nbsp;
-            img.header__hero-img(src=assetUrl(tour.imageCover, 'tours'), alt=`${tour.name}`)
+    main.tour-page
+        section.tour-hero
+            img.tour-hero__image(src=assetUrl(tour.imageCover, 'tours') alt=`${tour.name} landscape`)
+            .tour-hero__overlay
+            .tour-hero__content
+                nav.tour-breadcrumbs(aria-label='Breadcrumb')
+                    a(href='/') Tours
+                    span(aria-hidden='true') /
+                    span= tour.name
+                .tour-hero__body
+                    .tour-hero__copy
+                        .tour-badges
+                            span= tour.difficulty
+                            span= `${tour.duration} day adventure`
+                        h1= tour.name
+                        p= tour.summary
+                        .tour-hero__meta
+                            span
+                                svg(aria-hidden='true')
+                                    use(xlink:href='/img/icons.svg#icon-map-pin')
+                                = tour.startLocation.description
+                            span
+                                svg(aria-hidden='true')
+                                    use(xlink:href='/img/icons.svg#icon-star')
+                                = `${tour.ratingsAverage} (${tour.ratingsQuantity} reviews)`
+                    .tour-hero__price
+                        small From
+                        strong= `$${tour.price}`
+                        span per person
+                        a.btn.btn--light(href='#booking') View departures
 
-        .heading-box
-            h1.heading-primary
-                span=`${tour.name} Tour`
-            .heading-box__group
-                .heading-box__detail
-                    svg.heading-box__icon
-                        use(xlink:href='/img/icons.svg#icon-clock')
-                    span.heading-box__text=`${tour.duration} days` 
-                .heading-box__detail
-                    svg.heading-box__icon
-                        use(xlink:href='/img/icons.svg#icon-map-pin')
-                    span.heading-box__text=tour.startLocation.description
+        .tour-container
+            section.tour-overview(aria-labelledby='tour-about-heading')
+                article.tour-story
+                    p.eyebrow The experience
+                    h2#tour-about-heading= `About the ${tour.name}`
+                    - const paragraphs = tour.description.split('\n')
+                    each paragraph in paragraphs
+                        p= paragraph
+                aside.tour-facts-card
+                    .tour-section-heading
+                        p.eyebrow At a glance
+                        h2 Quick facts
+                    - const nextDate = departures.length ? departures[0].startDate : tour.startDates[0]
+                    +tourFact('Next departure', nextDate ? nextDate.toLocaleString('en-US', { month: 'long', year: 'numeric' }) : 'Coming soon', 'calendar')
+                    +tourFact('Difficulty', tour.difficulty, 'trending-up')
+                    +tourFact('Group size', `Up to ${tour.maxGroupSize} people`, 'users')
+                    +tourFact('Guest rating', `${tour.ratingsAverage} out of 5`, 'star')
 
-    section.section-description
-        .overview-box
-            div
-                .overview-box__group
-                    h2.heading-secondary.ma-bt-lg Quick facts
-                    - const date = new Date(tour.startDates[0]).toLocaleString('en-Us', {month: 'long', year: 'numeric'})
-                    +overviewBox('Next date', date, 'calendar')
-                    +overviewBox('Difficulty', tour.difficulty, 'trending-up')
-                    +overviewBox('Participants', `${tour.maxGroupSize} people`, 'user')
-                    +overviewBox('Rating', `${tour.ratingsAverage} / 5`, 'star')
+            if tour.guides.length
+                section.tour-guides(aria-labelledby='guides-heading')
+                    .tour-section-heading
+                        div
+                            p.eyebrow Local expertise
+                            h2#guides-heading Meet your guides
+                        p Experienced people who turn a great route into an unforgettable journey.
+                    .guide-grid
+                        each guide in tour.guides
+                            article.guide-card
+                                img(src=assetUrl(guide.photo, 'users') alt=`${guide.name}, ${guide.role}`)
+                                div
+                                    span= guide.role === 'lead-guide' ? 'Lead guide' : 'Tour guide'
+                                    h3= guide.name
 
-                .overview-box__group
-                    h2.heading-secondary.ma-bt-lg Your tour guides
+            if tour.images.length
+                section.tour-gallery(aria-labelledby='gallery-heading')
+                    .tour-section-heading
+                        div
+                            p.eyebrow A glimpse ahead
+                            h2#gallery-heading The journey in pictures
+                    .tour-gallery__grid
+                        each image, index in tour.images
+                            figure(class=index === 0 ? 'tour-gallery__featured' : '')
+                                img(src=assetUrl(image, 'tours') alt=`${tour.name} tour view ${index + 1}` loading='lazy')
 
-                    each guide in tour.guides
-                        .overview-box__detail
-                            img.overview-box__img(src=assetUrl(guide.photo, 'users'), alt='Lead guide')
-                            - if (guide.role === "lead-guide")
-                                span.overview-box__label Lead guide
-                            - if (guide.role === "guide")
-                                span.overview-box__label Tour guide
-                            span.overview-box__text=guide.name
-        .description-box
-            h2.heading-secondary.ma-bt-lg=`About ${tour.name} tour`
-            - const paragraphs = tour.description.split('\n')
-            each paragraph in paragraphs
-                p.description__text=paragraph 
+            section.tour-map-section(aria-labelledby='route-heading')
+                .tour-section-heading
+                    div
+                        p.eyebrow Your route
+                        h2#route-heading Follow the adventure
+                    p From the first trailhead to the final view, every stop is part of the story.
+                .tour-map-frame
+                    #map(data-locations=`${JSON.stringify(tour.locations)}`)
 
-    section.section-pictures
-        each image, i in tour.images
-            .picture-box
-                img(src=assetUrl(image, 'tours'), alt=`${tour.name} tour` class=`picture-box__img picture-box__img--${i + 1}`)
+            section.tour-reviews-section(aria-labelledby='reviews-heading')
+                .tour-section-heading
+                    div
+                        p.eyebrow Traveler stories
+                        h2#reviews-heading What guests are saying
+                    .tour-rating-summary
+                        strong= tour.ratingsAverage
+                        span= `out of 5 · ${tour.ratingsQuantity} reviews`
+                if tour.reviews.length
+                    .reviews-carousel(data-reviews-carousel)
+                        .reviews-carousel__viewport.reviews(tabindex='0' aria-label='Traveler reviews')
+                            each review in tour.reviews
+                                +reviewCard(review)
+                        if tour.reviews.length > 1
+                            .reviews-carousel__controls
+                                .reviews-carousel__status
+                                    span(data-reviews-current) 1
+                                    span /
+                                    span= tour.reviews.length
+                                .reviews-carousel__buttons
+                                    button.reviews-carousel__button(type='button' data-reviews-prev aria-label='Previous review')
+                                        svg(aria-hidden='true')
+                                            use(xlink:href='/img/icons.svg#icon-arrow-left')
+                                    button.reviews-carousel__button(type='button' data-reviews-next aria-label='Next review')
+                                        svg(aria-hidden='true')
+                                            use(xlink:href='/img/icons.svg#icon-arrow-right')
+                else
+                    .empty-state
+                        h3 Be the first to share your experience
+                        p Guest reviews will appear here after completed adventures.
+                if user && canReview
+                    form.form.review-form(data-tour-id=tour.id data-review-id=ownReview && ownReview.id)
+                        .review-form__heading
+                            div
+                                p.eyebrow Your experience
+                                h2= ownReview ? 'Update your review' : 'Share your experience'
+                            p Help future travelers know what made this tour special.
+                        .review-form__fields
+                            .form__group
+                                label.form__label(for='review-rating') Rating
+                                select#review-rating.form__input(required)
+                                    each rating in [5, 4, 3, 2, 1]
+                                        option(value=rating selected=ownReview && ownReview.rating === rating)= `${rating} ${rating === 1 ? 'star' : 'stars'}`
+                            .form__group.review-form__message
+                                label.form__label(for='review-text') Review
+                                textarea#review-text.form__input(required placeholder='Tell us about your adventure...')= ownReview && ownReview.review
+                        button.btn.btn--green(type='submit')= ownReview ? 'Update review' : 'Post review'
 
-
-    section.section-map
-        #map(data-locations=`${JSON.stringify(tour.locations)}`)
-
-    section.section-reviews
-        .reviews
-            each review in tour.reviews
-                +reviewCard(review)
-        if user && canReview
-            form.form.review-form(data-tour-id=tour.id data-review-id=ownReview && ownReview.id)
-                h2.heading-secondary= ownReview ? 'Update your review' : 'Share your experience'
-                .form__group
-                    label.form__label(for='review-rating') Rating
-                    input#review-rating.form__input(type='number' min='1' max='5' required value=ownReview && ownReview.rating)
-                .form__group
-                    label.form__label(for='review-text') Review
-                    textarea#review-text.form__input(required)= ownReview && ownReview.review
-                button.btn.btn--green(type='submit')= ownReview ? 'Update review' : 'Post review'
-    section.section-cta
-        .cta
-            .cta__img.cta__img--logo
-                img(src='/img/logo-white.png', alt='Natours logo')
-            img.cta__img.cta__img--1(src=assetUrl(tour.images[0], 'tours'), alt='')
-            img.cta__img.cta__img--2(src=assetUrl(tour.images[1], 'tours'), alt='')
-            .cta__content
-                h2.heading-secondary What are you waiting for?
-                p.cta__text=`${tour.duration} days. 1 adventure. Infinite memories. Make it yours today!`
+        section#booking.tour-booking
+            .tour-booking__visual
+                img(src=assetUrl(tour.images[0] || tour.imageCover, 'tours') alt='')
+                .tour-booking__visual-overlay
+                .tour-booking__quote
+                    img(src='/img/logo-white.png' alt='Natours')
+                    p One adventure. Infinite memories.
+            .tour-booking__content
+                p.eyebrow Reserve your place
+                h2 Ready to explore the #{tour.name}?
+                p.tour-booking__intro= `${tour.duration} days of extraordinary places, thoughtful details, and expert guidance.`
+                .tour-booking__price
+                    strong= `$${tour.price}`
+                    span per person
                 if user
                     if departures.length
-                        label.form__label(for='departure') Departure
-                        select#departure.form__input
-                            each departure in departures
-                                option(value=departure.id)= `${departure.startDate.toLocaleDateString()} — ${departure.remainingCapacity} seats left`
-                        label.form__label(for='seats') Seats
-                        input#seats.form__input(type='number' min='1' max='10' value='1')
-                        button.btn.btn--green.span-all-rows#book-tour Book tour now!
+                        .tour-booking__form
+                            .form__group
+                                label.form__label(for='departure') Choose departure
+                                select#departure.form__input
+                                    each departure in departures
+                                        option(value=departure.id)= `${departure.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} — ${departure.remainingCapacity} seats left`
+                            .form__group
+                                label.form__label(for='seats') Travelers
+                                input#seats.form__input(type='number' min='1' max='10' value='1')
+                            button#book-tour.btn.btn--green(type='button') Book tour now
+                        p.tour-booking__note Secure Stripe checkout · Instant confirmation
                     else
-                        p.cta__text No scheduled departures are currently available.
+                        .tour-booking__unavailable
+                            h3 New departures are on the way
+                            p No scheduled departures are currently available. Check back soon.
                 else
-                    button.btn.btn--green.span-all-rows Book tour now!
+                    a.btn.btn--green(href='/login') Log in to book this tour
+                    p.tour-booking__note Create an account or log in to choose a departure.

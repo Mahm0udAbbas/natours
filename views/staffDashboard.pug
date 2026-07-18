@@ -1,33 +1,48 @@
 extends base
+include _staffSidebar
 
 block content
-    main.main
-        h1.heading-secondary Staff dashboard
-        .card-container
-            each value, label in cards
-                article.card
-                    .card__details
-                        h2.heading-secondary= label
-                        p= label === 'revenue' ? `$${value}` : value
-        h2.heading-secondary Monthly departure plan
-        if !monthlyPlan.length
-            p No departures are scheduled this year.
-        else
-            table.staff-table
-                thead
-                    tr
-                        th Month
-                        th Departures
-                tbody
-                    each month in monthlyPlan
-                        tr
-                            td= new Date(2000, month._id - 1).toLocaleString('en', { month: 'long' })
-                            td= month.departures
-        nav
-            if user.role !== 'guide'
-                a.btn.btn--small.btn--green(href='/staff/tours') Tours
-                a.btn.btn--small.btn--green(href='/staff/departures') Departures
-                a.btn.btn--small.btn--green(href='/staff/bookings') Bookings
-            if user.role === 'admin'
-                a.btn.btn--small.btn--green(href='/staff/users') Users
-                a.btn.btn--small.btn--green(href='/staff/reviews') Reviews
+    main.staff-shell
+        +staffSidebar('dashboard')
+        .staff-content
+            header.staff-page-header
+                div
+                    p.eyebrow Overview
+                    h1 Staff dashboard
+                    p A quick look at how Natours is performing.
+                span.staff-role= user.role
+            section.metric-grid(aria-label='Key metrics')
+                each value, label in cards
+                    article.metric-card
+                        .metric-card__icon
+                            svg(aria-hidden='true')
+                                use(xlink:href=`/img/icons.svg#icon-${label === 'revenue' ? 'credit-card' : label === 'departures' ? 'calendar' : label === 'reviews' ? 'star' : label === 'seats' ? 'users' : 'map'}`)
+                        div
+                            p= label
+                            strong= label === 'revenue' ? `$${value.toLocaleString()}` : value.toLocaleString()
+            section.admin-panel
+                .admin-panel__header
+                    div
+                        p.eyebrow This year
+                        h2 Monthly departure plan
+                    a.btn.btn--small.btn--ghost(href='/staff/departures') Manage departures
+                if !monthlyPlan.length
+                    .empty-state
+                        h3 No departures scheduled
+                        p Add a departure to start building this year's plan.
+                else
+                    .table-scroll
+                        table.staff-table
+                            thead
+                                tr
+                                    th Month
+                                    th Departures
+                                    th Activity
+                            tbody
+                                each month in monthlyPlan
+                                    tr
+                                        td(data-label='Month')= new Date(2000, month._id - 1).toLocaleString('en', { month: 'long' })
+                                        td(data-label='Departures')= month.departures
+                                        td(data-label='Activity')
+                                            .progress-track
+                                                span(style=`width: ${Math.min(month.departures * 12, 100)}%`)

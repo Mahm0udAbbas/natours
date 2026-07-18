@@ -6,6 +6,17 @@ const User = require('../models/userModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 
+const STAFF_PAGE_SIZE = 10;
+
+const getPage = (value) => Math.max(Number.parseInt(value, 10) || 1, 1);
+
+const getPagination = (page, total) => ({
+  page,
+  total,
+  totalPages: Math.max(Math.ceil(total / STAFF_PAGE_SIZE), 1),
+  pageSize: STAFF_PAGE_SIZE,
+});
+
 exports.getOverview = catchAsync(async (req, res) => {
   const filter = {};
   if (req.query.difficulty) filter.difficulty = req.query.difficulty;
@@ -163,55 +174,192 @@ exports.getStaffDashboard = catchAsync(async (req, res) => {
 });
 
 exports.getStaffTours = catchAsync(async (req, res) => {
-  const tours = await Tour.find().sort('name');
+  const page = getPage(req.query.page);
+  const [tours, total] = await Promise.all([
+    Tour.find()
+      .sort('name')
+      .skip((page - 1) * STAFF_PAGE_SIZE)
+      .limit(STAFF_PAGE_SIZE),
+    Tour.countDocuments(),
+  ]);
   res.status(200).render('staffManage', {
     title: 'Manage tours',
     kind: 'tours',
     items: tours,
+    pagination: getPagination(page, total),
   });
 });
 
 exports.getStaffDepartures = catchAsync(async (req, res) => {
-  const [departures, tours] = await Promise.all([
-    Departure.find().populate('tour', 'name').sort('startDate'),
+  const page = getPage(req.query.page);
+  const [departures, tours, total] = await Promise.all([
+    Departure.find()
+      .populate('tour', 'name')
+      .sort('startDate')
+      .skip((page - 1) * STAFF_PAGE_SIZE)
+      .limit(STAFF_PAGE_SIZE),
     Tour.find().select('name'),
+    Departure.countDocuments(),
   ]);
   res.status(200).render('staffManage', {
     title: 'Manage departures',
     kind: 'departures',
     items: departures,
     tours,
+    pagination: getPagination(page, total),
   });
 });
 
 exports.getStaffBookings = catchAsync(async (req, res) => {
-  const bookings = await Booking.find().sort('-createdAt');
+  const page = getPage(req.query.page);
+  const [bookings, total] = await Promise.all([
+    Booking.find()
+      .sort('-createdAt')
+      .skip((page - 1) * STAFF_PAGE_SIZE)
+      .limit(STAFF_PAGE_SIZE),
+    Booking.countDocuments(),
+  ]);
   res.status(200).render('staffManage', {
     title: 'Manage bookings',
     kind: 'bookings',
     items: bookings,
+    pagination: getPagination(page, total),
   });
 });
 
 exports.getStaffUsers = catchAsync(async (req, res) => {
-  const users = await User.find().sort('name');
+  const page = getPage(req.query.page);
+  const [users, total] = await Promise.all([
+    User.find()
+      .sort('name')
+      .skip((page - 1) * STAFF_PAGE_SIZE)
+      .limit(STAFF_PAGE_SIZE),
+    User.countDocuments(),
+  ]);
   res.status(200).render('staffManage', {
     title: 'Manage users',
     kind: 'users',
     items: users,
+    pagination: getPagination(page, total),
   });
 });
 
 exports.getStaffReviews = catchAsync(async (req, res) => {
-  const reviews = await Review.find()
-    .populate('tour', 'name')
-    .sort('-createdAt');
+  const page = getPage(req.query.page);
+  const [reviews, total] = await Promise.all([
+    Review.find()
+      .populate('tour', 'name')
+      .sort('-createdAt')
+      .skip((page - 1) * STAFF_PAGE_SIZE)
+      .limit(STAFF_PAGE_SIZE),
+    Review.countDocuments(),
+  ]);
   res.status(200).render('staffManage', {
     title: 'Manage reviews',
     kind: 'reviews',
     items: reviews,
+    pagination: getPagination(page, total),
   });
 });
+
+exports.getInfoPage = (req, res) => {
+  const pages = {
+    about: {
+      title: 'About us',
+      eyebrow: 'Our story',
+      heading: 'Travel deeper. Come home different.',
+      intro:
+        'Natours creates thoughtfully planned small-group adventures that connect curious travelers with remarkable places and local people.',
+      sections: [
+        [
+          'Why we travel',
+          'We believe the best trips make room for discovery, genuine connection, and stories worth retelling.',
+        ],
+        [
+          'How we explore',
+          'Our tours balance iconic landscapes with unhurried local moments, led by experienced guides who know every trail.',
+        ],
+        [
+          'Our promise',
+          'Clear prices, carefully selected departures, and helpful support from booking to the journey home.',
+        ],
+      ],
+    },
+    terms: {
+      title: 'Terms & conditions',
+      eyebrow: 'The essentials',
+      heading: 'Simple terms for confident adventures.',
+      intro:
+        'These terms explain the rules that apply when you browse Natours, create an account, or reserve a tour.',
+      sections: [
+        [
+          'Bookings and payment',
+          'A booking is confirmed after successful payment and confirmation. Prices, capacity, and departure availability may change before checkout.',
+        ],
+        [
+          'Changes and cancellations',
+          'Cancellation, refund, and itinerary terms depend on the departure and will be shown during booking. We may adjust an itinerary when safety or local conditions require it.',
+        ],
+        [
+          'Traveler responsibilities',
+          'Travelers are responsible for accurate account details, required documents, suitable insurance, and following guide safety instructions.',
+        ],
+      ],
+    },
+    privacy: {
+      title: 'Privacy policy',
+      eyebrow: 'Your privacy',
+      heading: 'Your information deserves respect.',
+      intro:
+        'We use the minimum information needed to manage accounts, bookings, payments, reviews, and customer support.',
+      sections: [
+        [
+          'Information we collect',
+          'We collect details you provide, booking activity, and necessary technical information used to keep the service secure.',
+        ],
+        [
+          'How it is used',
+          'Information supports trip fulfillment, account security, service messages, and improvements to the Natours experience.',
+        ],
+        [
+          'Your choices',
+          'You can update your profile from your account and contact us about access, correction, or deletion requests.',
+        ],
+      ],
+    },
+    contact: {
+      title: 'Contact',
+      eyebrow: 'We are here to help',
+      heading: 'Let’s plan something unforgettable.',
+      intro:
+        'Questions about a tour, an existing booking, or joining our guide team? Our adventure specialists are ready to help.',
+      sections: [
+        [
+          'Trip support',
+          'Email hello@natours.com for tour and booking questions.',
+        ],
+        [
+          'Office hours',
+          'Monday to Friday, 9:00–18:00. We prioritize messages about upcoming departures.',
+        ],
+        [
+          'Work with us',
+          'Guide and partnership enquiries are welcome at partners@natours.com.',
+        ],
+      ],
+    },
+  };
+  const pageKey = req.path.slice(1);
+  const page = pages[pageKey];
+  if (!page) {
+    return res.status(404).render('error', {
+      title: 'Not found',
+      msg: 'This page does not exist.',
+    });
+
+  }
+  return res.status(200).render('infoPage', { ...page, pageKey });
+};
 
 exports.getSignupForm = (req, res) => {
   res.status(200).render('signup', {

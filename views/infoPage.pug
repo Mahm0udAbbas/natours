@@ -1,0 +1,21 @@
+extends base
+
+block content
+    main.info-page
+        section.info-hero
+            .info-hero__content
+                p.eyebrow= eyebrow
+                h1= heading
+                p.info-hero__intro= intro
+        section.info-content(aria-label=title)
+            each section, index in sections
+                article.info-card
+                    span.info-card__number=`0${index + 1}`
+                    h2= section[0]
+                    p= section[1]
+            if pageKey === 'contact'
+                .info-callout
+                    div
+                        p.eyebrow Start a conversation
+                        h2 Ready when you are.
+                    a.btn.btn--green(href='mailto:hello@natours.com') Email our team

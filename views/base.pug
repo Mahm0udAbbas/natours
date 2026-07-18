@@ -8,14 +8,14 @@ html
             link(rel='stylesheet' href='/css/style.css')
             link(rel='stylesheet' href='/dist/bundle.css')
             link(rel='shortcut icon' type='image/png' href='/img/favicon.png')
-            link(rel='stylesheet' href='https://fonts.googleapis.com/css?family=Lato:300,300i,700')
+            link(rel='preconnect' href='https://fonts.googleapis.com')
+            link(rel='preconnect' href='https://fonts.gstatic.com' crossorigin)
+            link(rel='stylesheet' href='https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap')
     body
-        //Header
         include _header
 
         block content
 
-        //footer
         include _footer
 
         block scripts

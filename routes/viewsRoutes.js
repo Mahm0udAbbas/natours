@@ -17,6 +17,7 @@ const {
   getStaffBookings,
   getStaffUsers,
   getStaffReviews,
+  getInfoPage,
 } = require('../controllers/viewsController');
 const {
   isLoggedin,
@@ -37,6 +38,11 @@ router.get('/my-tours', protect, getMyTours);
 router.get('/my-bookings', protect, getMyBookings);
 router.get('/my-reviews', protect, getMyReviews);
 router.get('/booking/success', protect, getBookingResult);
+router.get(
+  ['/about', '/terms', '/privacy', '/contact'],
+  isLoggedin,
+  getInfoPage,
+);
 router.use('/staff', protect);
 router.get(
   '/staff',

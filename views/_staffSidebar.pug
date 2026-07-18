@@ -1,0 +1,45 @@
+mixin staffSidebar(active)
+    aside.staff-sidebar
+        .staff-sidebar__heading
+            span Administration
+            strong Control center
+        nav.staff-sidebar__nav(aria-label='Administration')
+            a(class=active === 'dashboard' ? 'is-active' : '' href='/staff')
+                svg(aria-hidden='true')
+                    use(xlink:href='/img/icons.svg#icon-settings')
+                span Dashboard
+            if user.role !== 'guide'
+                a(class=active === 'tours' ? 'is-active' : '' href='/staff/tours')
+                    svg(aria-hidden='true')
+                        use(xlink:href='/img/icons.svg#icon-map')
+                    span Tours
+                a(class=active === 'departures' ? 'is-active' : '' href='/staff/departures')
+                    svg(aria-hidden='true')
+                        use(xlink:href='/img/icons.svg#icon-calendar')
+                    span Departures
+                a(class=active === 'bookings' ? 'is-active' : '' href='/staff/bookings')
+                    svg(aria-hidden='true')
+                        use(xlink:href='/img/icons.svg#icon-briefcase')
+                    span Bookings
+            if user.role === 'admin'
+                a(class=active === 'users' ? 'is-active' : '' href='/staff/users')
+                    svg(aria-hidden='true')
+                        use(xlink:href='/img/icons.svg#icon-users')
+                    span Users
+                a(class=active === 'reviews' ? 'is-active' : '' href='/staff/reviews')
+                    svg(aria-hidden='true')
+                        use(xlink:href='/img/icons.svg#icon-star')
+                    span Reviews
+        a.staff-sidebar__back(href='/')
+            span &larr;
+            | Back to website
+
+mixin staffPagination(pagination)
+    if pagination && pagination.totalPages > 1
+        nav.admin-pagination(aria-label='Table pages')
+            p Page #{pagination.page} of #{pagination.totalPages} · #{pagination.total} records
+            .admin-pagination__links
+                if pagination.page > 1
+                    a.btn.btn--small.btn--ghost(href=`?page=${pagination.page - 1}`) Previous
+                if pagination.page < pagination.totalPages
+                    a.btn.btn--small.btn--green(href=`?page=${pagination.page + 1}`) Next

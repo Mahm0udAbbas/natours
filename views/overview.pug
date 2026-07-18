@@ -1,8 +1,29 @@
 extends base
 
 block content
-    main.main
-        form.form.discovery-form(method='GET' action='/')
+    main.main.overview-page
+        section.discovery-hero
+            .discovery-hero__content
+                p.eyebrow Curated small-group adventures
+                h1 Find the wild that calls to you.
+                p Explore unforgettable journeys, expert-led trails, and extraordinary places—all planned for you.
+            .discovery-hero__stats(aria-label='Natours highlights')
+                div
+                    strong 9+
+                    span Signature tours
+                div
+                    strong 4.8
+                    span Average rating
+                div
+                    strong 100%
+                    span Adventure ready
+        section.discovery-section
+            .section-heading
+                div
+                    p.eyebrow Start exploring
+                    h2 Tours for every kind of traveler
+                p Choose your pace, budget, and perfect way into the wild.
+        form.form.discovery-form(method='GET' action='/' aria-label='Filter tours')
             .form__group
                 label.form__label(for='difficulty') Difficulty
                 select#difficulty.form__input(name='difficulty')
@@ -25,9 +46,15 @@ block content
             .form__group
                 label.form__label(for='featured') Featured only
                 input#featured(type='checkbox' name='featured' value='true' checked=filters && filters.featured === 'true')
-            button.btn.btn--green(type='submit') Find tours
-            button#near-me.btn.btn--small(type='button') Sort by distance
+            .discovery-form__actions
+                button.btn.btn--green(type='submit') Find tours
+                button#near-me.btn.btn--small.btn--ghost(type='button') Near me
         .card-container
+            if !tours.length
+                .empty-state
+                    h2 No tours match those filters
+                    p Try widening your price range or choosing another difficulty.
+                    a.btn.btn--green(href='/') Clear filters
             each tour in tours
                 .card(data-tour-id=tour.id)
                     .card__header 
@@ -61,11 +88,11 @@ block content
                             | 
                             span.card__footer-text per person
                         p.card__ratings
-                            span.card__footer-value=tour.ratingsAverage
+                            span.card__footer-value= `${tour.ratingsAverage} ★`
                             | 
                             span.card__footer-text=`rating (${tour.ratingsQuantity})`
                         a.btn.btn--green.btn--small(href=`/tour/${tour.slug}`) Details
         if pagination && pagination.totalPages > 1
             nav.pagination(aria-label='Tour pages')
                 each value in Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                    a.btn.btn--small(class=value === pagination.page ? 'btn--green' : '' href=`?${new URLSearchParams({...filters, page: value}).toString()}`)= value
+                    a.btn.btn--small(class=value === pagination.page ? 'btn--green' : 'btn--ghost' aria-current=value === pagination.page ? 'page' : undefined href=`?${new URLSearchParams({...filters, page: value}).toString()}`)= value

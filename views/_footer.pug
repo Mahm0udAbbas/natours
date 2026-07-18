@@ -1,15 +1,19 @@
-footer.footer
-    .footer__logo
-        img(src='/img/logo-green.png' alt='Natours logo')
-    ui.footer__nav
-        li 
-            a(href='#') About us
-        li
-            a(href='#') Download apps
-        li
-            a(href='#') Become a guide
-        li
-            a(href='#') Careers
-        li
-            a(href='#') Contact
-    p.footer__copyright &copy; by Mahmoud Abbas. All rights reserved.    
+footer.site-footer
+    .site-footer__inner
+        .site-footer__lead
+            img.site-footer__logo(src='/img/logo-white.png' alt='Natours')
+            p Small groups, big landscapes, and journeys you will talk about for years.
+            a.site-footer__cta(href='/') Find your next adventure
+        .site-footer__column
+            h2 Explore
+            a(href='/') All tours
+            a(href='/?featured=true') Featured trips
+            a(href='/about') Our story
+        .site-footer__column
+            h2 Support
+            a(href='/contact') Contact us
+            a(href='/terms') Terms & conditions
+            a(href='/privacy') Privacy policy
+        .site-footer__bottom
+            p &copy; #{new Date().getFullYear()} Natours. All rights reserved.
+            p Designed for the wild at heart.

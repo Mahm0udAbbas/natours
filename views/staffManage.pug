@@ -1,115 +1,169 @@
 extends base
+include _staffSidebar
 
 block content
-    main.main(data-staff-kind=kind)
-        h1.heading-secondary= title
-        if kind === 'tours'
-            form.form#tour-create
-                .form__group
-                    label.form__label(for='tour-name') Name
-                    input#tour-name.form__input(required minlength='10' maxlength='40')
-                .form__group
-                    label.form__label(for='tour-duration') Duration (days)
-                    input#tour-duration.form__input(type='number' min='1' required)
-                .form__group
-                    label.form__label(for='tour-group-size') Maximum group size
-                    input#tour-group-size.form__input(type='number' min='1' required)
-                .form__group
-                    label.form__label(for='tour-difficulty') Difficulty
-                    select#tour-difficulty.form__input
-                        each difficulty in ['easy', 'medium', 'difficult']
-                            option(value=difficulty)= difficulty
-                .form__group
-                    label.form__label(for='tour-price') Price
-                    input#tour-price.form__input(type='number' min='0' required)
-                .form__group
-                    label.form__label(for='tour-summary') Summary
-                    input#tour-summary.form__input(required)
-                .form__group
-                    label.form__label(for='tour-description') Description
-                    textarea#tour-description.form__input(required)
-                .form__group
-                    label.form__label(for='tour-location') Start location
-                    input#tour-location.form__input(required placeholder='City or region')
-                .form__group
-                    label.form__label(for='tour-longitude') Longitude
-                    input#tour-longitude.form__input(type='number' step='any' min='-180' max='180' required)
-                .form__group
-                    label.form__label(for='tour-latitude') Latitude
-                    input#tour-latitude.form__input(type='number' step='any' min='-90' max='90' required)
-                button.btn.btn--green(type='submit') Create tour
-        if kind === 'users'
-            form.form#user-create
-                .form__group
-                    label.form__label(for='staff-user-name') Name
-                    input#staff-user-name.form__input(required)
-                .form__group
-                    label.form__label(for='staff-user-email') Email
-                    input#staff-user-email.form__input(type='email' required)
-                .form__group
-                    label.form__label(for='staff-user-password') Temporary password
-                    input#staff-user-password.form__input(type='password' minlength='8' required)
-                .form__group
-                    label.form__label(for='staff-user-role') Role
-                    select#staff-user-role.form__input
-                        each role in ['user', 'guide', 'lead-guide', 'admin']
-                            option(value=role)= role
-                button.btn.btn--green(type='submit') Create user
-        if kind === 'departures'
-            form.form#departure-create
-                .form__group
-                    label.form__label(for='departure-tour') Tour
-                    select#departure-tour.form__input(required)
-                        each tour in tours
-                            option(value=tour.id)= tour.name
-                .form__group
-                    label.form__label(for='departure-date') Start date
-                    input#departure-date.form__input(type='datetime-local' required)
-                .form__group
-                    label.form__label(for='departure-capacity') Capacity
-                    input#departure-capacity.form__input(type='number' min='1' required)
-                button.btn.btn--green(type='submit') Add departure
-        if !items.length
-            p No records found.
-        else
-            table.staff-table
-                thead
-                    tr
-                        th Record
-                        th Details
-                        th Actions
-                tbody
-                    each item in items
-                        tr(data-id=item.id)
-                            if kind === 'tours'
-                                td= item.name
-                                td
-                                    label.form__label(for=`tour-price-${item.id}`) Price
-                                    input.form__input.staff-tour-price(id=`tour-price-${item.id}` type='number' min='0' value=item.price data-id=item.id)
-                                td
-                                    a.btn.btn--small(href=`/tour/${item.slug}`) View
-                                    button.btn.btn--small.staff-save-tour(type='button' data-id=item.id) Save
-                                    button.btn.btn--small.staff-delete-tour(type='button' data-id=item.id) Delete
-                            if kind === 'departures'
-                                td= item.tour && item.tour.name
-                                td= `${item.startDate.toLocaleString()} · ${item.remainingCapacity} remaining · ${item.status}`
-                                td
-                                    button.btn.btn--small.staff-delete-departure(type='button' data-id=item.id data-tour-id=item.tour && item.tour.id) Delete
-                            if kind === 'bookings'
-                                td= item.tour && item.tour.name
-                                td= `${item.user && item.user.email} · ${item.seats} seats · $${item.totalPrice} · ${item.status}`
-                                td
-                                    if item.status === 'paid' && user.role === 'admin'
-                                        button.btn.btn--small.staff-refund(type='button' data-id=item.id) Refund
-                            if kind === 'users'
-                                td= `${item.name} (${item.email})`
-                                td
-                                    select.staff-user-role.form__input(data-id=item.id)
+    main.staff-shell(data-staff-kind=kind)
+        +staffSidebar(kind)
+        .staff-content
+            header.staff-page-header
+                div
+                    p.eyebrow Administration
+                    h1= title
+                    p Review records, make updates, and keep operations moving.
+                span.staff-record-count= `${pagination.total} ${pagination.total === 1 ? 'record' : 'records'}`
+
+            if ['tours', 'users', 'departures'].includes(kind)
+                details.admin-create-panel
+                    summary
+                        span
+                            strong= kind === 'tours' ? 'Create a new tour' : kind === 'users' ? 'Add a team member' : 'Add departure'
+                            small= kind === 'tours' ? 'Enter the core trip details' : kind === 'users' ? 'Create credentials and assign a role' : 'Schedule a tour date and capacity'
+                        span.btn.btn--small.btn--green Add new
+                    .admin-create-panel__body
+                        if kind === 'tours'
+                            form.form.admin-form#tour-create
+                                .form__group
+                                    label.form__label(for='tour-name') Name
+                                    input#tour-name.form__input(required minlength='10' maxlength='40')
+                                .form__group
+                                    label.form__label(for='tour-duration') Duration (days)
+                                    input#tour-duration.form__input(type='number' min='1' required)
+                                .form__group
+                                    label.form__label(for='tour-group-size') Maximum group size
+                                    input#tour-group-size.form__input(type='number' min='1' required)
+                                .form__group
+                                    label.form__label(for='tour-difficulty') Difficulty
+                                    select#tour-difficulty.form__input
+                                        each difficulty in ['easy', 'medium', 'difficult']
+                                            option(value=difficulty)= difficulty
+                                .form__group
+                                    label.form__label(for='tour-price') Price
+                                    input#tour-price.form__input(type='number' min='0' required)
+                                .form__group.admin-form__wide
+                                    label.form__label(for='tour-summary') Summary
+                                    input#tour-summary.form__input(required)
+                                .form__group.admin-form__wide
+                                    label.form__label(for='tour-description') Description
+                                    textarea#tour-description.form__input(required)
+                                .form__group
+                                    label.form__label(for='tour-location') Start location
+                                    input#tour-location.form__input(required placeholder='City or region')
+                                .form__group
+                                    label.form__label(for='tour-longitude') Longitude
+                                    input#tour-longitude.form__input(type='number' step='any' min='-180' max='180' required)
+                                .form__group
+                                    label.form__label(for='tour-latitude') Latitude
+                                    input#tour-latitude.form__input(type='number' step='any' min='-90' max='90' required)
+                                .admin-form__actions
+                                    button.btn.btn--green(type='submit') Create tour
+                        if kind === 'users'
+                            form.form.admin-form#user-create
+                                .form__group
+                                    label.form__label(for='staff-user-name') Name
+                                    input#staff-user-name.form__input(required)
+                                .form__group
+                                    label.form__label(for='staff-user-email') Email
+                                    input#staff-user-email.form__input(type='email' required)
+                                .form__group
+                                    label.form__label(for='staff-user-password') Temporary password
+                                    input#staff-user-password.form__input(type='password' minlength='8' required)
+                                .form__group
+                                    label.form__label(for='staff-user-role') Role
+                                    select#staff-user-role.form__input
                                         each role in ['user', 'guide', 'lead-guide', 'admin']
-                                            option(value=role selected=item.role === role)= role
-                                td Status changes save immediately
-                            if kind === 'reviews'
-                                td= item.user && item.user.name
-                                td= `${item.rating}/5 — ${item.review}`
-                                td
-                                    button.btn.btn--small.staff-delete-review(type='button' data-id=item.id) Delete
+                                            option(value=role)= role
+                                .admin-form__actions
+                                    button.btn.btn--green(type='submit') Create user
+                        if kind === 'departures'
+                            form.form.admin-form#departure-create
+                                .form__group
+                                    label.form__label(for='departure-tour') Tour
+                                    select#departure-tour.form__input(required)
+                                        each tour in tours
+                                            option(value=tour.id)= tour.name
+                                .form__group
+                                    label.form__label(for='departure-date') Start date
+                                    input#departure-date.form__input(type='datetime-local' required)
+                                .form__group
+                                    label.form__label(for='departure-capacity') Capacity
+                                    input#departure-capacity.form__input(type='number' min='1' required)
+                                .admin-form__actions
+                                    button.btn.btn--green(type='submit') Add departure
+
+            section.admin-panel
+                .admin-panel__header
+                    div
+                        h2= title
+                        p Latest records and available actions
+                if !items.length
+                    .empty-state
+                        h3 No records found
+                        p New records will appear here when they are available.
+                else
+                    .table-scroll
+                        table.staff-table
+                            thead
+                                tr
+                                    th Record
+                                    th Details
+                                    th Actions
+                            tbody
+                                each item in items
+                                    tr(data-id=item.id)
+                                        if kind === 'tours'
+                                            td(data-label='Tour')
+                                                strong= item.name
+                                                small= `${item.duration} days · ${item.difficulty}`
+                                            td(data-label='Price')
+                                                .table-field
+                                                    span $
+                                                    input.form__input.staff-tour-price(type='number' min='0' value=item.price data-id=item.id aria-label=`Price for ${item.name}`)
+                                            td(data-label='Actions')
+                                                .table-actions
+                                                    a.btn.btn--small.btn--ghost(href=`/tour/${item.slug}`) View
+                                                    button.btn.btn--small.btn--green.staff-save-tour(type='button' data-id=item.id) Save
+                                                    button.btn.btn--small.btn--danger.staff-delete-tour(type='button' data-id=item.id) Delete
+                                        if kind === 'departures'
+                                            td(data-label='Tour')
+                                                strong= item.tour && item.tour.name
+                                                small= item.startDate.toLocaleDateString()
+                                            td(data-label='Details')
+                                                span.status-pill(class=`status-pill--${item.status}`)= item.status
+                                                small= `${item.remainingCapacity} seats remaining`
+                                            td(data-label='Actions')
+                                                button.btn.btn--small.btn--danger.staff-delete-departure(type='button' data-id=item.id data-tour-id=item.tour && item.tour.id) Delete
+                                        if kind === 'bookings'
+                                            td(data-label='Booking')
+                                                strong= item.tour && item.tour.name
+                                                small= item.user && item.user.email
+                                            td(data-label='Details')
+                                                span.status-pill(class=`status-pill--${item.status}`)= item.status
+                                                small= `${item.seats} seats · $${item.totalPrice}`
+                                            td(data-label='Actions')
+                                                if item.status === 'paid' && user.role === 'admin'
+                                                    button.btn.btn--small.btn--danger.staff-refund(type='button' data-id=item.id) Refund
+                                                else
+                                                    span.muted No actions
+                                        if kind === 'users'
+                                            td(data-label='User')
+                                                .table-person
+                                                    img(src=assetUrl(item.photo, 'users') alt='')
+                                                    span
+                                                        strong= item.name
+                                                        small= item.email
+                                            td(data-label='Role')
+                                                select.staff-user-role.form__input(data-id=item.id aria-label=`Role for ${item.name}`)
+                                                    each role in ['user', 'guide', 'lead-guide', 'admin']
+                                                        option(value=role selected=item.role === role)= role
+                                            td(data-label='Status')
+                                                span.status-pill.status-pill--active Active
+                                        if kind === 'reviews'
+                                            td(data-label='Reviewer')
+                                                strong= item.user && item.user.name
+                                                small= item.tour && item.tour.name
+                                            td(data-label='Review')
+                                                .rating= `${item.rating}/5 ★`
+                                                small.review-excerpt= item.review
+                                            td(data-label='Actions')
+                                                button.btn.btn--small.btn--danger.staff-delete-review(type='button' data-id=item.id) Delete
+                +staffPagination(pagination)

@@ -14,6 +14,8 @@ import initializeAccountActions from './accountActions';
 import initializeReviews from './reviews';
 import initializeDiscovery from './discovery';
 import initializeStaffActions from './staffActions';
+import initializeNavigation from './navigation';
+import initializeReviewsCarousel from './reviewsCarousel';
 
 initializeLogin();
 initializeSignup();
@@ -29,3 +31,5 @@ initializeAccountActions();
 initializeReviews();
 initializeDiscovery();
 initializeStaffActions();
+initializeNavigation();
+initializeReviewsCarousel();
