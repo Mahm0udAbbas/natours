@@ -16,6 +16,7 @@ import initializeDiscovery from './discovery';
 import initializeStaffActions from './staffActions';
 import initializeNavigation from './navigation';
 import initializeReviewsCarousel from './reviewsCarousel';
+import initializeFavorites from './favorites';
 
 initializeLogin();
 initializeSignup();
@@ -33,3 +34,4 @@ initializeDiscovery();
 initializeStaffActions();
 initializeNavigation();
 initializeReviewsCarousel();
+initializeFavorites();

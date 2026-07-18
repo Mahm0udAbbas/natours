@@ -203,7 +203,7 @@ exports.protect = catchAsync(async (req, res, next) => {
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
   // 3) check if  user still existes
-  const freshUser = await User.findById(decoded.id);
+  const freshUser = await User.findById(decoded.id).select('+favorites');
   if (!freshUser) {
     return next(
       new AppError(
@@ -240,7 +240,7 @@ exports.isLoggedin = catchAsync(async (req, res, next) => {
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
 
     // 3) check if  user still existes
-    const freshUser = await User.findById(decoded.id);
+    const freshUser = await User.findById(decoded.id).select('+favorites');
     if (!freshUser) {
       return next();
     }

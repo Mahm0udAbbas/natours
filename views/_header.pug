@@ -12,6 +12,8 @@ header.site-header
                 a.site-nav__link(href='/') Explore tours
                 a.site-nav__link(href='/about') About us
                 a.site-nav__link(href='/contact') Contact
+                if user
+                    a.site-nav__link(href='/my-favorites') My favorites
                 if user && ['admin', 'lead-guide', 'guide'].includes(user.role)
                     a.site-nav__link.site-nav__link--admin(href='/staff')
                         svg(aria-hidden='true')

@@ -449,6 +449,61 @@ h4,
   box-shadow: var(--shadow-lg);
 }
 
+.card__header {
+  position: relative;
+}
+
+.favorite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.6rem;
+  height: 4.6rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  color: var(--brand-dark);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 0.8rem 2rem rgba(7, 42, 31, 0.2);
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    color 0.2s,
+    background 0.2s;
+}
+
+.favorite-button:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.favorite-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.favorite-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.favorite-button svg {
+  width: 2.1rem;
+  height: 2.1rem;
+  fill: currentColor;
+}
+
+.favorite-button.is-favorite {
+  color: #fff;
+  background: #d84d62;
+}
+
+.card__favorite {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 2;
+}
+
 .card__picture {
   height: 24rem;
 }
@@ -509,6 +564,64 @@ h4,
   justify-content: center;
   gap: 0.8rem;
   margin-top: 4rem;
+}
+
+.favorites-page {
+  max-width: 144rem;
+  min-height: 60vh;
+  margin: 0 auto;
+}
+
+.favorites-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-bottom: 3.5rem;
+  padding: 3rem 2.5rem;
+  border-radius: var(--radius);
+  color: #fff;
+  background: linear-gradient(135deg, #0b4f39, #17865d);
+  box-shadow: var(--shadow-sm);
+}
+
+.favorites-page__header .eyebrow {
+  color: #a5ebc3;
+}
+
+.favorites-page__header .heading-secondary {
+  color: #fff;
+}
+
+.favorites-page__header p:not(.eyebrow) {
+  color: #d8eee2;
+}
+
+.favorites-page__count {
+  align-self: flex-start;
+  padding: 1rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(3, 40, 27, 0.3);
+}
+
+.favorites-page__count strong {
+  font-size: 2rem;
+}
+
+.favorites-empty {
+  max-width: 60rem;
+  margin: 5rem auto;
+}
+
+.favorites-empty svg {
+  width: 5rem;
+  height: 5rem;
+  margin-bottom: 1.5rem;
+  fill: var(--brand);
+}
+
+.is-hidden {
+  display: none !important;
 }
 
 /* Footer */
@@ -1073,6 +1186,17 @@ h4,
     padding: 5rem 3rem;
   }
 
+  .favorites-page__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4rem;
+  }
+
+  .favorites-page__count {
+    align-self: center;
+  }
+
   .card-container,
   .info-content {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1495,6 +1619,26 @@ h4,
 .tour-hero__price .btn {
   grid-column: 1 / -1;
   margin-top: 1.4rem;
+}
+
+.tour-hero__price .favorite-button--hero {
+  grid-column: 1 / -1;
+  width: 100%;
+  height: auto;
+  min-height: 4.6rem;
+  gap: 0.8rem;
+  margin-top: 0.9rem;
+  padding: 1rem 1.5rem;
+  border-radius: 999px;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.tour-hero__price .favorite-button--hero.is-favorite {
+  color: #9d2437;
+  background: #fff;
 }
 
 .tour-container {

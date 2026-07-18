@@ -10,6 +10,7 @@ const {
   getMyTours,
   getMyBookings,
   getMyReviews,
+  getMyFavorites,
   getBookingResult,
   getStaffDashboard,
   getStaffTours,
@@ -37,6 +38,7 @@ router.get('/me', protect, getAccount);
 router.get('/my-tours', protect, getMyTours);
 router.get('/my-bookings', protect, getMyBookings);
 router.get('/my-reviews', protect, getMyReviews);
+router.get('/my-favorites', protect, getMyFavorites);
 router.get('/booking/success', protect, getBookingResult);
 router.get(
   ['/about', '/terms', '/privacy', '/contact'],

@@ -1,0 +1,22 @@
+extends base
+include _tourCard
+
+block content
+    main.main.favorites-page
+        header.favorites-page__header
+            div
+                p.eyebrow Your saved adventures
+                h1.heading-secondary My favorites
+                p Keep the tours you love close while you plan your next escape.
+            p.favorites-page__count
+                strong(data-favorites-count)= tours.length
+                span= tours.length === 1 ? ' saved tour' : ' saved tours'
+        .card-container(data-favorites-grid)
+            each tour in tours
+                +tourCard(tour, user, true)
+        .empty-state.favorites-empty(class=tours.length ? 'is-hidden' : '' data-favorites-empty)
+            svg(aria-hidden='true')
+                use(xlink:href='/img/icons.svg#icon-heart')
+            h2 No favorites yet
+            p Save tours that catch your eye and they will appear here.
+            a.btn.btn--green(href='/') Explore tours

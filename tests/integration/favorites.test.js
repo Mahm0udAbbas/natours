@@ -102,4 +102,24 @@ describe('favorites API', () => {
     expect(response.status).toBe(200);
     expect(response.body.data.data.favorites).toBeUndefined();
   });
+
+  test('renders the favorites page with removable saved tour cards', async () => {
+    const [tour, user] = await Promise.all([createTour(), createUser()]);
+    await User.findByIdAndUpdate(user.id, {
+      $addToSet: { favorites: tour.id },
+    });
+
+    const response = await request(app)
+      .get('/my-favorites')
+      .set('Authorization', authHeader(user));
+
+    expect(response.status).toBe(200);
+    expect(response.text).toContain('My favorites');
+    expect(response.text).toContain(tour.name);
+    expect(response.text).toContain(
+      'data-favorite-button="data-favorite-button"',
+    );
+    expect(response.text).toContain('data-remove-on-unfavorite="true"');
+    expect(response.text).toContain('aria-pressed="true"');
+  });
 });

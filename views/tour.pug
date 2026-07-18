@@ -41,6 +41,18 @@ block content
                         strong= `$${tour.price}`
                         span per person
                         a.btn.btn--light(href='#booking') View departures
+                        button.favorite-button.favorite-button--hero(
+                            type='button'
+                            class=user && user.favorites && user.favorites.some(id => String(id) === String(tour.id)) ? 'is-favorite' : ''
+                            data-favorite-button
+                            data-tour-id=tour.id
+                            data-authenticated=user ? 'true' : 'false'
+                            aria-pressed=user && user.favorites && user.favorites.some(id => String(id) === String(tour.id)) ? 'true' : 'false'
+                            aria-label=user && user.favorites && user.favorites.some(id => String(id) === String(tour.id)) ? 'Remove from favorites' : 'Add to favorites'
+                        )
+                            svg(aria-hidden='true')
+                                use(xlink:href='/img/icons.svg#icon-heart')
+                            span.favorite-button__text= user && user.favorites && user.favorites.some(id => String(id) === String(tour.id)) ? 'Saved to favorites' : 'Save to favorites'
 
         .tour-container
             section.tour-overview(aria-labelledby='tour-about-heading')

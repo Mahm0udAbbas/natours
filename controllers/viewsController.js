@@ -121,6 +121,16 @@ exports.getMyReviews = catchAsync(async (req, res) => {
   res.status(200).render('myReviews', { title: 'My reviews', reviews });
 });
 
+exports.getMyFavorites = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user.id)
+    .select('+favorites')
+    .populate({ path: 'favorites' });
+  res.status(200).render('favorites', {
+    title: 'My favorites',
+    tours: user.favorites || [],
+  });
+});
+
 exports.getBookingResult = (req, res) =>
   res.status(200).render('bookingResult', {
     title: 'Payment received',
@@ -356,7 +366,6 @@ exports.getInfoPage = (req, res) => {
       title: 'Not found',
       msg: 'This page does not exist.',
     });
-
   }
   return res.status(200).render('infoPage', { ...page, pageKey });
 };
