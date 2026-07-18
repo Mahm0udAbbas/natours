@@ -2,50 +2,57 @@ const dotenv = require('dotenv');
 
 dotenv.config({ path: './.env' });
 const mongoose = require('mongoose');
+const { databaseUrl, validateEnvironment } = require('./utils/env');
+
 mongoose.set('autoIndex', false);
 
-process.on('uncaughtException', (err) => {
-  console.log(err, err.name);
-  console.log('UNHANDLED REJECTION , Shutting down');
-
-  process.exit(1);
-});
-const app = require('./app');
-const Tour = require('./models/tourModel');
-
-// Use local DB or remote DB from .env
-const DB_LOCAL = process.env.DATABASE_LOCAL;
-// const DB_REMOTE = process.env.DATABASE.replace(
-//   '<PASSWORD>',
-//   process.env.DATABASE_PASSWORD,
-// );
-
-const port = process.env.PORT || 3000;
 let server;
+const shutdown = (reason, exitCode = 0) => {
+  process.stdout.write(
+    `${JSON.stringify({ level: 'info', event: 'shutdown', reason })}\n`,
+  );
+  const finish = async () => {
+    await mongoose.connection.close().catch(() => {});
+    process.exit(exitCode);
+  };
+  if (server) server.close(finish);
+  else finish();
+  setTimeout(() => process.exit(exitCode || 1), 10000).unref();
+};
 
-// Connect and create all schema indexes before accepting requests. $geoNear
-// cannot run until the startLocation 2dsphere index exists.
+process.on('uncaughtException', (error) => {
+  process.stderr.write(
+    `${JSON.stringify({ level: 'error', event: 'uncaughtException', message: error.message })}\n`,
+  );
+  shutdown('uncaughtException', 1);
+});
+
 const start = async () => {
-  await mongoose.connect(DB_LOCAL); // you can replace with DB_REMOTE if needed
-  console.log('DB connection successful!');
-
-  await Tour.createIndexes();
-  console.log('Indexes are ready!');
-
-  server = app.listen(port, () => {
-    console.log(`Server listening on port ${port}...`);
+  const env = validateEnvironment();
+  await mongoose.connect(databaseUrl(env), {
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+  });
+  const app = require('./app');
+  server = app.listen(env.PORT, () => {
+    process.stdout.write(
+      `${JSON.stringify({ level: 'info', event: 'listening', port: env.PORT })}\n`,
+    );
   });
 };
 
-start();
-
-process.on('unhandledRejection', (err) => {
-  console.log(err, err.name);
-  console.log('UNHANDLED REJECTION , Shutting down');
-
-  if (server) {
-    server.close(() => process.exit(1));
-  } else {
-    process.exit(1);
-  }
+start().catch((error) => {
+  process.stderr.write(
+    `${JSON.stringify({ level: 'error', event: 'startup', message: error.message })}\n`,
+  );
+  shutdown('startup', 1);
 });
+
+process.on('unhandledRejection', (error) => {
+  process.stderr.write(
+    `${JSON.stringify({ level: 'error', event: 'unhandledRejection', message: error.message })}\n`,
+  );
+  shutdown('unhandledRejection', 1);
+});
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

@@ -1395,3 +1395,53 @@ body {
   -webkit-transform: translateY(-2px);
   transform: translateY(-2px);
 }
+/* Progressive discovery and staff-management additions. */
+.discovery-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.5rem;
+  align-items: end;
+  margin-bottom: 4rem;
+}
+
+.staff-table {
+  width: 100%;
+  margin: 3rem 0;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 1.5rem;
+}
+
+.staff-table th,
+.staff-table td {
+  padding: 1.4rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.staff-table th {
+  color: #fff;
+  background: #55c57a;
+}
+
+@media (max-width: 700px) {
+  .staff-table,
+  .staff-table tbody,
+  .staff-table tr,
+  .staff-table td {
+    display: block;
+  }
+
+  .staff-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .staff-table tr {
+    padding: 1rem;
+    border-bottom: 2px solid #55c57a;
+  }
+}

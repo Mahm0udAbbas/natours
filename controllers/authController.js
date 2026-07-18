@@ -39,8 +39,8 @@ exports.signup = catchAsync(async (req, res, next) => {
     passwordConfirm: req.body.passwordConfirm,
   });
   const url = `${req.protocol}://${req.get('host')}/me`;
-  await new Email(newUser, url).sendWelcomeEmail();
   createSendToken(newUser, 201, res);
+  new Email(newUser, url).sendWelcomeEmail().catch(() => {});
 });
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -81,7 +81,10 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
-    return next(new AppError('There is no user with email address', 404));
+    return res.status(200).json({
+      status: 'success',
+      message: 'If that account exists, password reset instructions were sent.',
+    });
   }
 
   // 2) Gernerate the reset password token
@@ -96,7 +99,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Token sent to your email!',
+      message: 'If that account exists, password reset instructions were sent.',
     });
   } catch (e) {
     user.passwordResetToken = undefined;
@@ -246,8 +249,6 @@ exports.isLoggedin = catchAsync(async (req, res, next) => {
     if (await freshUser.changedPasswordAfter(decoded.iat)) {
       return next();
     }
-    console.log(freshUser);
-
     // There is a logged in user
     res.locals.user = freshUser;
     return next();

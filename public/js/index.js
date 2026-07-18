@@ -10,6 +10,10 @@ import {
 import { initializeUpdateSettings } from './updateSettings';
 import { initializeUpdatePassword } from './updatePassword';
 import initializeBookTour from './bookingCheckout';
+import initializeAccountActions from './accountActions';
+import initializeReviews from './reviews';
+import initializeDiscovery from './discovery';
+import initializeStaffActions from './staffActions';
 
 initializeLogin();
 initializeSignup();
@@ -21,3 +25,7 @@ initializeUpdateSettings();
 initializeUpdatePassword();
 initializeMap();
 initializeBookTour();
+initializeAccountActions();
+initializeReviews();
+initializeDiscovery();
+initializeStaffActions();

@@ -2,6 +2,15 @@ const request = require('supertest');
 const app = require('../../app');
 
 describe('rendered views', () => {
+  test('exposes liveness and database readiness checks', async () => {
+    const [live, ready] = await Promise.all([
+      request(app).get('/health/live'),
+      request(app).get('/health/ready'),
+    ]);
+    expect(live.status).toBe(200);
+    expect(ready.status).toBe(503);
+  });
+
   test('renders the signup form', async () => {
     const response = await request(app).get('/signup');
 

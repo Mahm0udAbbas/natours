@@ -76,7 +76,9 @@ describe('authentication API', () => {
       .send({ email: 'reset@example.com' });
 
     expect(response.status).toBe(200);
-    expect(response.body.message).toBe('Token sent to your email!');
+    expect(response.body.message).toBe(
+      'If that account exists, password reset instructions were sent.',
+    );
     expect(sendPasswordReset).toHaveBeenCalledTimes(1);
     expect(resetUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/reset-password\//);
   });

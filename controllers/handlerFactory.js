@@ -81,8 +81,8 @@ exports.getAll = (Model) =>
       .limitFields()
       .paginate();
 
+    const docsNum = await Model.countDocuments(features.filterQuery);
     if (requestQuery.page) {
-      const docsNum = await Model.countDocuments(features.filterQuery);
       if (features.skip >= docsNum)
         throw new AppError('This page does not exist', 404);
     }
@@ -96,6 +96,12 @@ exports.getAll = (Model) =>
     res.status(200).json({
       status: 'success',
       results: docs.length,
+      pagination: {
+        page: features.page,
+        limit: features.limit,
+        totalResults: docsNum,
+        totalPages: Math.ceil(docsNum / features.limit),
+      },
       data: {
         data: docs,
       },

@@ -1,0 +1,16 @@
+extends base
+
+block content
+    main.main
+        h1.heading-secondary My reviews
+        .reviews
+            if !reviews.length
+                p You have not reviewed a tour yet.
+            each item in reviews
+                article.review(data-review-id=item.id)
+                    h2= item.tour && item.tour.name
+                    p.review__text= item.review
+                    p= `${item.rating} / 5`
+                    if item.tour
+                        a.btn.btn--small.btn--green(href=`/tour/${item.tour.slug}`) Edit
+                    button.btn.btn--small.delete-review(type='button' data-review-id=item.id) Delete

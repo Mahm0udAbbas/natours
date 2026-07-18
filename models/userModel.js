@@ -7,11 +7,11 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      requried: [true, 'Please provide your name'],
+      required: [true, 'Please provide your name'],
     },
     email: {
       type: String,
-      requried: [true, 'Please provide you email'],
+      required: [true, 'Please provide you email'],
       unique: true,
       lowercase: true,
       validate: [validator.isEmail, 'Please provide a valid email!'],
@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'default.jpg',
     },
+    photoFileId: { type: String, select: false },
+    photoPath: { type: String, select: false },
     role: {
       type: String,
       enum: ['user', 'guide', 'lead-guide', 'admin'],
@@ -27,13 +29,13 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      requried: [true, 'Please provide a passwoed'],
+      required: [true, 'Please provide a password'],
       minlength: [8, 'Password must contain at least 8 chartars '],
       select: false,
     },
     passwordConfirm: {
       type: String,
-      requried: [true, 'Please confirm your passwoed'],
+      required: [true, 'Please confirm your password'],
       validate: {
         validator: function (el) {
           return el === this.password;
@@ -42,8 +44,8 @@ const userSchema = new mongoose.Schema(
       },
     },
     passwordChangedAt: Date,
-    passwordResetToken: String,
-    passwordResetTokenExpire: Date,
+    passwordResetToken: { type: String, select: false },
+    passwordResetTokenExpire: { type: Date, select: false },
     active: {
       type: Boolean,
       default: true,
@@ -96,7 +98,6 @@ userSchema.methods.createPasswordResetToken = function () {
     .update(resetToken)
     .digest('hex');
   this.passwordResetTokenExpire = Date.now() + 10 * 60 * 1000;
-  console.log({ resetToken }, this.passwordResetToken);
   return resetToken;
 };
 

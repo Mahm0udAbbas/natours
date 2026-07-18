@@ -13,7 +13,7 @@ const reviewSchema = new mongoose.Schema(
       max: [5, 'Rating must be below 5.0'],
       min: [1, 'Rating must be above 1.0'],
     },
-    createAt: { type: Date, default: Date.now() },
+    createdAt: { type: Date, default: Date.now },
     tour: {
       type: mongoose.Schema.ObjectId,
       ref: 'Tour',
@@ -74,7 +74,7 @@ reviewSchema.pre(/^findOneAnd/, async function () {
 });
 
 reviewSchema.post(/^findOneAnd/, async function () {
-  await this.r.constructor.calcAverageRatings(this.r.tour);
+  if (this.r) await this.r.constructor.calcAverageRatings(this.r.tour);
 });
 
 const Review = mongoose.model('Review', reviewSchema);

@@ -12,7 +12,7 @@ block content
     section.section-header
         .header__hero
             .header__hero-overlay &nbsp;
-            img.header__hero-img(src=`/img/tours/${tour.imageCover}`, alt=`${tour.name}`)
+            img.header__hero-img(src=assetUrl(tour.imageCover, 'tours'), alt=`${tour.name}`)
 
         .heading-box
             h1.heading-primary
@@ -43,7 +43,7 @@ block content
 
                     each guide in tour.guides
                         .overview-box__detail
-                            img.overview-box__img(src=`/img/users/${guide.photo}`, alt='Lead guide')
+                            img.overview-box__img(src=assetUrl(guide.photo, 'users'), alt='Lead guide')
                             - if (guide.role === "lead-guide")
                                 span.overview-box__label Lead guide
                             - if (guide.role === "guide")
@@ -58,7 +58,7 @@ block content
     section.section-pictures
         each image, i in tour.images
             .picture-box
-                img(src=`/img/tours/${image}`, alt=`${tour.name} tour` class=`picture-box__img picture-box__img--${i + 1}`)
+                img(src=assetUrl(image, 'tours'), alt=`${tour.name} tour` class=`picture-box__img picture-box__img--${i + 1}`)
 
 
     section.section-map
@@ -68,16 +68,35 @@ block content
         .reviews
             each review in tour.reviews
                 +reviewCard(review)
+        if user && canReview
+            form.form.review-form(data-tour-id=tour.id data-review-id=ownReview && ownReview.id)
+                h2.heading-secondary= ownReview ? 'Update your review' : 'Share your experience'
+                .form__group
+                    label.form__label(for='review-rating') Rating
+                    input#review-rating.form__input(type='number' min='1' max='5' required value=ownReview && ownReview.rating)
+                .form__group
+                    label.form__label(for='review-text') Review
+                    textarea#review-text.form__input(required)= ownReview && ownReview.review
+                button.btn.btn--green(type='submit')= ownReview ? 'Update review' : 'Post review'
     section.section-cta
         .cta
             .cta__img.cta__img--logo
                 img(src='/img/logo-white.png', alt='Natours logo')
-            img.cta__img.cta__img--1(src=`/img/tours/${tour.images[0]}`, alt='')
-            img.cta__img.cta__img--2(src=`/img/tours/${tour.images[1]}`, alt='')
+            img.cta__img.cta__img--1(src=assetUrl(tour.images[0], 'tours'), alt='')
+            img.cta__img.cta__img--2(src=assetUrl(tour.images[1], 'tours'), alt='')
             .cta__content
                 h2.heading-secondary What are you waiting for?
                 p.cta__text=`${tour.duration} days. 1 adventure. Infinite memories. Make it yours today!`
                 if user
-                    button.btn.btn--green.span-all-rows#book-tour(data-tour-id=`${tour.id}`) Book tour now!
+                    if departures.length
+                        label.form__label(for='departure') Departure
+                        select#departure.form__input
+                            each departure in departures
+                                option(value=departure.id)= `${departure.startDate.toLocaleDateString()} — ${departure.remainingCapacity} seats left`
+                        label.form__label(for='seats') Seats
+                        input#seats.form__input(type='number' min='1' max='10' value='1')
+                        button.btn.btn--green.span-all-rows#book-tour Book tour now!
+                    else
+                        p.cta__text No scheduled departures are currently available.
                 else
                     button.btn.btn--green.span-all-rows Book tour now!

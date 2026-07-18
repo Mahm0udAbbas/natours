@@ -88,3 +88,26 @@ exports.validateResetPassword = validate({
 });
 exports.validateUpdatePassword = validate({ body: updatePasswordSchema });
 exports.validateUpdateMe = validate({ body: updateMeSchema });
+
+const adminCreateSchema = confirmPassword(
+  z
+    .object({
+      name: plainText,
+      email,
+      ...passwordPair,
+      role: z.enum(['user', 'guide', 'lead-guide', 'admin']).default('user'),
+    })
+    .strict(),
+);
+const adminUpdateSchema = z
+  .object({
+    name: plainText.optional(),
+    email: email.optional(),
+    role: z.enum(['user', 'guide', 'lead-guide', 'admin']).optional(),
+    active: z.boolean().optional(),
+  })
+  .strict()
+  .refine((body) => Object.keys(body).length > 0, 'No fields supplied');
+
+exports.validateAdminCreateUser = validate({ body: adminCreateSchema });
+exports.validateAdminUpdateUser = validate({ body: adminUpdateSchema });

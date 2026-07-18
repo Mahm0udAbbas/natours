@@ -12,6 +12,7 @@ const {
   getDistances,
   uploadTourImages,
   resizeTourImages,
+  prepareTourImageValidation,
 } = require('../controllers/tourController');
 const { protect, restrictTo } = require('../controllers/authController');
 const {
@@ -20,10 +21,12 @@ const {
   validateUpdateTour,
 } = require('../validators/tourValidators');
 const reviewsRouter = require('./reviewRoutes');
+const departuresRouter = require('./departureRoutes');
 
 const router = express.Router();
 
 router.use('/:tourId/reviews', reviewsRouter);
+router.use('/:tourId/departures', departuresRouter);
 
 router
   .route('/tours-within/:distance/center/:latlng/unit/:unit')
@@ -54,8 +57,9 @@ router
     restrictTo('admin', 'lead-guide'),
     validateTourId,
     uploadTourImages,
-    resizeTourImages,
+    prepareTourImageValidation,
     validateUpdateTour,
+    resizeTourImages,
     updateTour,
   )
   .delete(

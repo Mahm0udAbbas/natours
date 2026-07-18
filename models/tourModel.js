@@ -91,7 +91,11 @@ const tourSchema = new mongoose.Schema(
     imageCover: {
       type: String,
     },
+    imageCoverFileId: { type: String, select: false },
+    imageCoverPath: { type: String, select: false },
     images: [String],
+    imageFileIds: { type: [String], select: false },
+    imagePaths: { type: [String], select: false },
     startLocation: {
       type: startLocationSchema,
       default: undefined,
@@ -147,7 +151,7 @@ tourSchema.virtual('reviews', {
 
 // Generate slug from name before saving
 tourSchema.pre('save', function () {
-  this.slug = slugify(this.name, { lower: true });
+  if (this.isModified('name')) this.slug = slugify(this.name, { lower: true });
 });
 
 // Embedding guides into tour document
@@ -174,9 +178,11 @@ tourSchema.pre(/^find/, function () {
 
 // AGGREGATION MIDDLEWARE
 // Hide secret tours from aggregation results
-// tourSchema.pre('aggregate', function () {
-//   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
-// });
+tourSchema.pre('aggregate', function () {
+  const match = { $match: { secretTour: { $ne: true } } };
+  if (this.pipeline()[0]?.$geoNear) this.pipeline().splice(1, 0, match);
+  else this.pipeline().unshift(match);
+});
 const Tour = mongoose.model('Tour', tourSchema);
 
 module.exports = Tour;

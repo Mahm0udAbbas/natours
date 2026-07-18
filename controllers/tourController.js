@@ -4,6 +4,7 @@ const Tour = require('../models/tourModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const factory = require('./handlerFactory');
+const imageStorage = require('../services/imageStorage');
 
 // Controllers
 
@@ -30,6 +31,7 @@ const multerFilter = (req, file, cb) => {
 const upload = multer({
   storage: multerStorage,
   fileFilter: multerFilter,
+  limits: { fileSize: 5 * 1024 * 1024, files: 4 },
 });
 
 exports.uploadTourImages = upload.fields([
@@ -37,35 +39,82 @@ exports.uploadTourImages = upload.fields([
   { name: 'images', maxCount: 3 },
 ]);
 
+exports.prepareTourImageValidation = (req, res, next) => {
+  if (req.files?.imageCover) req.body.imageCover = 'pending-upload';
+  if (req.files?.images) req.body.images = ['pending-upload'];
+  next();
+};
+
 exports.resizeTourImages = catchAsync(async (req, res, next) => {
   if (!req.files) return next();
 
-  if (req.files.imageCover) {
-    req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
+  try {
+    if (req.files.imageCover) {
+      req.body.imageCover = `tour-${req.params.id}-${Date.now()}-cover.jpeg`;
 
-    await sharp(req.files.imageCover[0].buffer)
-      .resize(2000, 1333)
-      .toFormat('jpeg')
-      .jpeg({ quality: 90 })
-      .toFile(`public/img/tours/${req.body.imageCover}`);
-  }
+      const image = sharp(req.files.imageCover[0].buffer)
+        .resize(2000, 1333)
+        .toFormat('jpeg')
+        .jpeg({ quality: 90 });
+      if (imageStorage.isRemoteStorage()) {
+        const uploaded = await imageStorage.uploadImage({
+          buffer: await image.toBuffer(),
+          fileName: req.body.imageCover,
+          folder: '/natours/tours',
+        });
+        req.body.imageCover = uploaded.url;
+        req.trustedImageFields = {
+          imageCoverFileId: uploaded.fileId,
+          imageCoverPath: uploaded.path,
+        };
+        req.remoteUploads = [uploaded];
+      } else await image.toFile(`public/img/tours/${req.body.imageCover}`);
+    }
 
-  if (req.files.images) {
-    req.body.images = [];
+    if (req.files.images) {
+      req.body.images = [];
+      const imageFileIds = [];
+      const imagePaths = [];
 
+      await Promise.all(
+        req.files.images.map(async (file, index) => {
+          const filename = `tour-${req.params.id}-${Date.now()}-${index + 1}.jpeg`;
+
+          const image = sharp(file.buffer)
+            .resize(2000, 1333)
+            .toFormat('jpeg')
+            .jpeg({ quality: 90 });
+          if (imageStorage.isRemoteStorage()) {
+            const uploaded = await imageStorage.uploadImage({
+              buffer: await image.toBuffer(),
+              fileName: filename,
+              folder: '/natours/tours',
+            });
+            req.remoteUploads = [...(req.remoteUploads || []), uploaded];
+            req.body.images.push(uploaded.url);
+            imageFileIds.push(uploaded.fileId);
+            imagePaths.push(uploaded.path);
+          } else {
+            await image.toFile(`public/img/tours/${filename}`);
+            req.body.images.push(filename);
+          }
+        }),
+      );
+      if (imageFileIds.length) {
+        req.trustedImageFields = {
+          ...(req.trustedImageFields || {}),
+          imageFileIds,
+          imagePaths,
+        };
+      }
+    }
+  } catch (error) {
     await Promise.all(
-      req.files.images.map(async (file, index) => {
-        const filename = `tour-${req.params.id}-${Date.now()}-${index + 1}.jpeg`;
-
-        await sharp(file.buffer)
-          .resize(2000, 1333)
-          .toFormat('jpeg')
-          .jpeg({ quality: 90 })
-          .toFile(`public/img/tours/${filename}`);
-
-        req.body.images.push(filename);
-      }),
+      (req.remoteUploads || []).map((item) =>
+        imageStorage.deleteImage(item.fileId).catch(() => {}),
+      ),
     );
+    throw error;
   }
 
   next();
@@ -74,7 +123,40 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
 exports.getAllTours = factory.getAll(Tour);
 exports.getTour = factory.getOne(Tour, { path: 'reviews' });
 exports.createTour = factory.createOne(Tour);
-exports.updateTour = factory.updateOne(Tour);
+exports.updateTour = catchAsync(async (req, res, next) => {
+  const tour = await Tour.findById(req.params.id).select(
+    '+imageCoverFileId +imageFileIds',
+  );
+  if (!tour) return next(new AppError('No tour found with that ID', 404));
+  const previousCoverId = tour.imageCoverFileId;
+  const previousImageIds = [...(tour.imageFileIds || [])];
+  Object.assign(tour, req.body, req.trustedImageFields);
+  try {
+    await tour.save();
+  } catch (error) {
+    await Promise.all(
+      (req.remoteUploads || []).map((item) =>
+        imageStorage.deleteImage(item.fileId).catch(() => {}),
+      ),
+    );
+    throw error;
+  }
+  const replacedIds = [];
+  if (req.trustedImageFields?.imageCoverFileId && previousCoverId) {
+    replacedIds.push(previousCoverId);
+  }
+  if (req.trustedImageFields?.imageFileIds) {
+    replacedIds.push(...previousImageIds);
+  }
+  replacedIds.forEach((fileId) =>
+    imageStorage.deleteImage(fileId).catch(() => {}),
+  );
+  tour.imageCoverFileId = undefined;
+  tour.imageCoverPath = undefined;
+  tour.imageFileIds = undefined;
+  tour.imagePaths = undefined;
+  res.status(200).json({ status: 'success', data: { data: tour } });
+});
 exports.deleteTour = factory.deleteOne(Tour);
 
 exports.getToursStats = catchAsync(async (req, res, next) => {

@@ -1,0 +1,17 @@
+extends base
+
+block content
+    main.main
+        h1.heading-secondary Billing and bookings
+        .card-container
+            if !bookings.length
+                p You have no bookings yet.
+            each booking in bookings
+                article.card
+                    .card__details
+                        h2= booking.tour.name
+                        p= booking.departure ? booking.departure.startDate.toLocaleDateString() : 'Departure unavailable'
+                        p= `${booking.seats} seat(s) — $${booking.totalPrice}`
+                        p= `Status: ${booking.status}`
+                        if booking.receiptUrl
+                            a.btn.btn--small.btn--green(href=booking.receiptUrl target='_blank' rel='noopener') Receipt

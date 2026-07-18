@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+public/dist/
+uploads/
+views/**/*.pug
+Procfile
+.env*

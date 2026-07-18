@@ -1,0 +1,77 @@
+openapi: 3.1.0
+info:
+  title: Natours API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      required: [status, message]
+      properties:
+        status: { type: string, example: fail }
+        message: { type: string }
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        limit: { type: integer }
+        totalResults: { type: integer }
+        totalPages: { type: integer }
+paths:
+  /booking/checkout-session:
+    post:
+      summary: Reserve seats and create a Stripe Checkout session
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [departureId, seats]
+              properties:
+                departureId: { type: string }
+                seats: { type: integer, minimum: 1, maximum: 10 }
+      responses:
+        '200': { description: Checkout session created }
+        '409': { description: Insufficient capacity }
+  /booking/webhook:
+    post:
+      summary: Receive signed Stripe events
+      responses:
+        '200': { description: Event processed }
+        '400': { description: Invalid signature }
+  /booking/me:
+    get:
+      summary: List the current customer's bookings
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Booking list }
+  /tours/{tourId}/departures:
+    get:
+      summary: List tour departures
+      parameters:
+        - in: path
+          name: tourId
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Departure list }
+    post:
+      summary: Create a departure (admin or lead guide)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Departure created }
+  /reviews/me:
+    get:
+      summary: List the current customer's reviews
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Review list }

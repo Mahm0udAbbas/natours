@@ -2,13 +2,38 @@ extends base
 
 block content
     main.main
+        form.form.discovery-form(method='GET' action='/')
+            .form__group
+                label.form__label(for='difficulty') Difficulty
+                select#difficulty.form__input(name='difficulty')
+                    option(value='') All difficulties
+                    each value in ['easy', 'medium', 'difficult']
+                        option(value=value selected=filters && filters.difficulty === value)= value
+            .form__group
+                label.form__label(for='minPrice') Minimum price
+                input#minPrice.form__input(type='number' min='0' name='minPrice' value=filters && filters.minPrice)
+            .form__group
+                label.form__label(for='maxPrice') Maximum price
+                input#maxPrice.form__input(type='number' min='0' name='maxPrice' value=filters && filters.maxPrice)
+            .form__group
+                label.form__label(for='sort') Sort
+                select#sort.form__input(name='sort')
+                    option(value='-ratingsAverage') Best rated
+                    option(value='price' selected=filters && filters.sort === 'price') Price: low to high
+                    option(value='-price' selected=filters && filters.sort === '-price') Price: high to low
+                    option(value='duration' selected=filters && filters.sort === 'duration') Duration
+            .form__group
+                label.form__label(for='featured') Featured only
+                input#featured(type='checkbox' name='featured' value='true' checked=filters && filters.featured === 'true')
+            button.btn.btn--green(type='submit') Find tours
+            button#near-me.btn.btn--small(type='button') Sort by distance
         .card-container
             each tour in tours
-                .card 
+                .card(data-tour-id=tour.id)
                     .card__header 
                         .card__picture
                             .card__picture-overlay &nbsp;
-                            img.card__picture-img(src=`img/tours/${tour.imageCover}`, alt=tour.name)                        
+                            img.card__picture-img(src=assetUrl(tour.imageCover, 'tours'), alt=tour.name)
                         h3.heading-tertirary
                             span=tour.name
                     .card__details
@@ -40,3 +65,7 @@ block content
                             | 
                             span.card__footer-text=`rating (${tour.ratingsQuantity})`
                         a.btn.btn--green.btn--small(href=`/tour/${tour.slug}`) Details
+        if pagination && pagination.totalPages > 1
+            nav.pagination(aria-label='Tour pages')
+                each value in Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                    a.btn.btn--small(class=value === pagination.page ? 'btn--green' : '' href=`?${new URLSearchParams({...filters, page: value}).toString()}`)= value

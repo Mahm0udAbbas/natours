@@ -7,34 +7,46 @@ const bookingSchema = new mongoose.Schema(
       ref: 'Tour',
       required: [true, 'A booking must have a tour'],
     },
+    departure: {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Departure',
+      required: [true, 'A booking must have a departure'],
+    },
     user: {
       type: mongoose.Schema.ObjectId,
       ref: 'User',
       required: [true, 'A booking must have a user'],
     },
-    price: {
-      type: Number,
-      required: [true, 'A booking must have a price'],
+    seats: { type: Number, required: true, min: 1, max: 10 },
+    unitPrice: { type: Number, required: true, min: 0 },
+    totalPrice: { type: Number, required: true, min: 0 },
+    status: {
+      type: String,
+      enum: ['pending', 'paid', 'cancelled', 'refunded'],
+      default: 'pending',
     },
-    createdAt: {
-      type: Date,
-      default: Date.now(),
-    },
-    paid: {
-      type: Boolean,
-      default: true,
-    },
+    reservationExpiresAt: Date,
+    stripeSessionId: { type: String, sparse: true, unique: true },
+    stripePaymentIntentId: { type: String, sparse: true, unique: true },
+    receiptUrl: String,
+    paidAt: Date,
+    refundedAt: Date,
   },
-  { toJSON: { virtuals: true }, toObject: { virtuals: true } },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  },
 );
 
+bookingSchema.index({ user: 1, createdAt: -1 });
+bookingSchema.index({ departure: 1, status: 1 });
+bookingSchema.index({ status: 1, reservationExpiresAt: 1 });
+
 bookingSchema.pre(/^find/, function () {
-  this.populate('user').populate({
-    path: 'tour',
-    select: 'name',
-  });
+  this.populate({ path: 'user', select: 'name email photo' })
+    .populate({ path: 'tour', select: 'name slug imageCover' })
+    .populate({ path: 'departure', select: 'startDate capacity status' });
 });
 
-const Booking = mongoose.model('Booking', bookingSchema);
-
-module.exports = Booking;
+module.exports = mongoose.model('Booking', bookingSchema);
