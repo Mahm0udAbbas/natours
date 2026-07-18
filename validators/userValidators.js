@@ -111,3 +111,11 @@ const adminUpdateSchema = z
 
 exports.validateAdminCreateUser = validate({ body: adminCreateSchema });
 exports.validateAdminUpdateUser = validate({ body: adminUpdateSchema });
+
+const favoriteTourParamsSchema = z
+  .object({
+    tourId: z.string().regex(/^[a-fA-F0-9]{24}$/, 'Tour id is invalid'),
+  })
+  .strict();
+
+exports.validateFavoriteTourId = validate({ params: favoriteTourParamsSchema });

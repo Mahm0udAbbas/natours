@@ -75,3 +75,33 @@ paths:
       security: [{ bearerAuth: [] }]
       responses:
         '200': { description: Review list }
+  /users/me/favorites:
+    get:
+      summary: List the current user's favorite tours
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Favorite tour list }
+        '401': { description: Authentication required }
+  /users/me/favorites/{tourId}:
+    parameters:
+      - in: path
+        name: tourId
+        required: true
+        schema:
+          type: string
+          pattern: '^[a-fA-F0-9]{24}$'
+    post:
+      summary: Add a tour to the current user's favorites
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Updated favorite tour list }
+        '400': { description: Invalid tour id }
+        '401': { description: Authentication required }
+        '404': { description: Tour not found }
+    delete:
+      summary: Remove a tour from the current user's favorites
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Updated favorite tour list }
+        '400': { description: Invalid tour id }
+        '401': { description: Authentication required }

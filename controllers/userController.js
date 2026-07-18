@@ -2,6 +2,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 
 const User = require('../models/userModel');
+const Tour = require('../models/tourModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const factory = require('./handlerFactory');
@@ -33,6 +34,48 @@ exports.updateUser = catchAsync(async (req, res, next) => {
   res.status(200).json({ status: 'success', data: { data: user } });
 });
 exports.getAllUsers = factory.getAll(User);
+
+const favoriteToursQuery = (userId, update) => {
+  const query = update
+    ? User.findByIdAndUpdate(userId, update, {
+        returnDocument: 'after',
+        runValidators: true,
+      })
+    : User.findById(userId);
+
+  return query.select('+favorites').populate({ path: 'favorites' });
+};
+
+const sendFavorites = (res, user) => {
+  const favorites = user.favorites || [];
+  res.status(200).json({
+    status: 'success',
+    results: favorites.length,
+    data: { favorites },
+  });
+};
+
+exports.getMyFavorites = catchAsync(async (req, res) => {
+  const user = await favoriteToursQuery(req.user.id);
+  sendFavorites(res, user);
+});
+
+exports.addFavorite = catchAsync(async (req, res, next) => {
+  const tourExists = await Tour.exists({ _id: req.params.tourId });
+  if (!tourExists) return next(new AppError('No tour found with that ID', 404));
+
+  const user = await favoriteToursQuery(req.user.id, {
+    $addToSet: { favorites: req.params.tourId },
+  });
+  sendFavorites(res, user);
+});
+
+exports.removeFavorite = catchAsync(async (req, res) => {
+  const user = await favoriteToursQuery(req.user.id, {
+    $pull: { favorites: req.params.tourId },
+  });
+  sendFavorites(res, user);
+});
 
 const multerStorage = multer.memoryStorage();
 

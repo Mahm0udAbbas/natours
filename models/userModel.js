@@ -51,6 +51,11 @@ const userSchema = new mongoose.Schema(
       default: true,
       select: false,
     },
+    favorites: {
+      type: [{ type: mongoose.Schema.ObjectId, ref: 'Tour' }],
+      default: [],
+      select: false,
+    },
   },
   { toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );

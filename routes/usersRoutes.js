@@ -13,6 +13,9 @@ const {
   uploadUserPhoto,
   resizeUserPhoto,
   prepareUserPhotoValidation,
+  getMyFavorites,
+  addFavorite,
+  removeFavorite,
 } = require('../controllers/userController');
 const {
   signup,
@@ -33,6 +36,7 @@ const {
   validateUpdateMe,
   validateAdminCreateUser,
   validateAdminUpdateUser,
+  validateFavoriteTourId,
 } = require('../validators/userValidators');
 
 const router = express.Router();
@@ -69,6 +73,11 @@ router.patch(
 );
 router.delete('/deleteMe', deleteMe);
 router.get('/me', getMe, getUser);
+router.get('/me/favorites', getMyFavorites);
+router
+  .route('/me/favorites/:tourId')
+  .post(validateFavoriteTourId, addFavorite)
+  .delete(validateFavoriteTourId, removeFavorite);
 
 router.use(protect, restrictTo('admin'));
 //User Routes
