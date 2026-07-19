@@ -7,6 +7,8 @@ const cookieParser = require('cookie-parser');
 const hpp = require('hpp');
 const crypto = require('crypto');
 const compression = require('compression');
+const { validateEnvironment } = require('./utils/env');
+const { connectDatabase } = require('./utils/database');
 
 const toursRouter = require('./routes/toursRoutes');
 const usersRouter = require('./routes/usersRoutes');
@@ -22,6 +24,17 @@ const health = require('./controllers/healthController');
 // Start express app
 const app = express();
 app.set('trust proxy', 1);
+
+// Vercel imports the Express app without running server.js. Cache the MongoDB
+// connection across warm function invocations and reconnect after cold starts.
+if (process.env.VERCEL) {
+  const env = validateEnvironment();
+  app.use(async (req, res, next) => {
+    if (req.path === '/health/live') return next();
+    await connectDatabase(env);
+    next();
+  });
+}
 
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));

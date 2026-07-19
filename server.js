@@ -2,9 +2,8 @@ const dotenv = require('dotenv');
 
 dotenv.config({ path: './.env' });
 const mongoose = require('mongoose');
-const { databaseUrl, validateEnvironment } = require('./utils/env');
-
-mongoose.set('autoIndex', false);
+const { validateEnvironment } = require('./utils/env');
+const { connectDatabase } = require('./utils/database');
 
 let server;
 const shutdown = (reason, exitCode = 0) => {
@@ -29,10 +28,7 @@ process.on('uncaughtException', (error) => {
 
 const start = async () => {
   const env = validateEnvironment();
-  await mongoose.connect(databaseUrl(env), {
-    serverSelectionTimeoutMS: 10000,
-    connectTimeoutMS: 10000,
-  });
+  await connectDatabase(env);
   const app = require('./app');
   server = app.listen(env.PORT, () => {
     process.stdout.write(

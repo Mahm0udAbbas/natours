@@ -13,6 +13,7 @@
     "prestart": "npm run build:js",
     "start": "nodemon server.js",
     "start:prod": "cross-env NODE_ENV=production node server.js",
+    "build": "npm run build:js:prod",
     "heroku-postbuild": "npm run build:js:prod",
     "release": "node scripts/migrate-departures.js && node scripts/create-indexes.js",
     "reconcile:bookings": "node scripts/release-expired-reservations.js",
