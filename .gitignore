@@ -88,3 +88,5 @@ docker-compose.override.yml
 *.tgz
 *.bak
 *.old
+
+.vercel
