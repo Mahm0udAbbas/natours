@@ -42,6 +42,9 @@ const remove = async (fileId) => {
   }
 };
 
-exports.isRemoteStorage = () => process.env.NODE_ENV === 'production';
+exports.isStorageEnabled = () => process.env.IMAGE_STORAGE !== 'disabled';
+exports.isRemoteStorage = () =>
+  process.env.IMAGE_STORAGE === 'imagekit' ||
+  (!process.env.IMAGE_STORAGE && process.env.NODE_ENV === 'production');
 exports.uploadImage = upload;
 exports.deleteImage = remove;

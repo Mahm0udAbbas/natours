@@ -19,11 +19,26 @@ describe('environment configuration', () => {
     ).toThrow();
   });
 
+  test('supports an explicit test-payment deployment with uploads disabled', () => {
+    expect(
+      validateEnvironment({
+        ...base,
+        NODE_ENV: 'production',
+        DATABASE: 'mongodb://localhost/production-test',
+        APP_URL: 'https://example.herokuapp.com',
+        STRIPE_MODE: 'test',
+        STRIPE_SECRET_KEY: 'sk_test_example',
+        STRIPE_WEBHOOK_SECRET: 'whsec_example',
+        IMAGE_STORAGE: 'disabled',
+      }),
+    ).toBeDefined();
+  });
+
   test('encodes database passwords in connection templates', () => {
     expect(
       databaseUrl({
         NODE_ENV: 'production',
-        DATABASE: 'mongodb://u:<PASSWORD>@host/db',
+        DATABASE: 'mongodb://u:<DATABASE_PASSWORD>@host/db',
         DATABASE_PASSWORD: 'a@b',
       }),
     ).toContain('a%40b');

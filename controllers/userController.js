@@ -103,6 +103,9 @@ exports.prepareUserPhotoValidation = (req, res, next) => {
 
 exports.resizeUserPhoto = catchAsync(async (req, res, next) => {
   if (!req.file) return next();
+  if (!imageStorage.isStorageEnabled()) {
+    throw new AppError('Image uploads are temporarily unavailable', 503);
+  }
 
   req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
   const image = await sharp(req.file.buffer)

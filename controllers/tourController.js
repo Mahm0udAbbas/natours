@@ -46,7 +46,11 @@ exports.prepareTourImageValidation = (req, res, next) => {
 };
 
 exports.resizeTourImages = catchAsync(async (req, res, next) => {
-  if (!req.files) return next();
+  const hasImages = req.files?.imageCover?.length || req.files?.images?.length;
+  if (!hasImages) return next();
+  if (!imageStorage.isStorageEnabled()) {
+    throw new AppError('Image uploads are temporarily unavailable', 503);
+  }
 
   try {
     if (req.files.imageCover) {

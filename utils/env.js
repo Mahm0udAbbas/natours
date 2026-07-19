@@ -14,6 +14,8 @@ const base = z.object({
   APP_URL: z.string().url().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_MODE: z.enum(['test', 'live']).optional(),
+  IMAGE_STORAGE: z.enum(['local', 'imagekit', 'disabled']).optional(),
   IMAGEKIT_PUBLIC_KEY: z.string().optional(),
   IMAGEKIT_PRIVATE_KEY: z.string().optional(),
   IMAGEKIT_URL_ENDPOINT: z.string().url().optional(),
@@ -22,15 +24,24 @@ const base = z.object({
 exports.validateEnvironment = (environment = process.env) => {
   const parsed = base.parse(environment);
   if (parsed.NODE_ENV === 'production') {
-    z.object({
+    const production = z.object({
       DATABASE: z.string().min(1),
       APP_URL: z.string().url(),
-      STRIPE_SECRET_KEY: z.string().startsWith('sk_live_'),
       STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_'),
-      IMAGEKIT_PUBLIC_KEY: z.string().min(1),
-      IMAGEKIT_PRIVATE_KEY: z.string().min(1),
-      IMAGEKIT_URL_ENDPOINT: z.string().url(),
-    }).parse(parsed);
+    });
+    production.parse(parsed);
+
+    const stripePrefix =
+      parsed.STRIPE_MODE === 'test' ? 'sk_test_' : 'sk_live_';
+    z.string().startsWith(stripePrefix).parse(parsed.STRIPE_SECRET_KEY);
+
+    if ((parsed.IMAGE_STORAGE || 'imagekit') === 'imagekit') {
+      z.object({
+        IMAGEKIT_PUBLIC_KEY: z.string().min(1),
+        IMAGEKIT_PRIVATE_KEY: z.string().min(1),
+        IMAGEKIT_URL_ENDPOINT: z.string().url(),
+      }).parse(parsed);
+    }
   } else if (!parsed.DATABASE_LOCAL && !parsed.DATABASE) {
     throw new Error('DATABASE_LOCAL or DATABASE is required');
   }
@@ -43,7 +54,7 @@ exports.databaseUrl = (env) => {
       ? env.DATABASE
       : env.DATABASE_LOCAL || env.DATABASE;
   return template.replace(
-    '<PASSWORD>',
+    '<DATABASE_PASSWORD>',
     encodeURIComponent(env.DATABASE_PASSWORD || ''),
   );
 };
