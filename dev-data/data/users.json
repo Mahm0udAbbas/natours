@@ -5,6 +5,11 @@
     "email": "admin@natours.io",
     "role": "admin",
     "active": true,
+    "favorites": [
+      "5c88fa8cf4afda39709c2955",
+      "5c88fa8cf4afda39709c2951",
+      "5c88fa8cf4afda39709c295a"
+    ],
     "photo": "user-1.jpg",
     "password": "$2a$12$Q0grHjH9PXc6SxivC8m12.2mZJ9BbKcgFpwSG4Y1ZEII8HJVzWeyS"
   },
@@ -14,6 +19,7 @@
     "email": "loulou@example.com",
     "role": "user",
     "active": true,
+    "favorites": ["5c88fa8cf4afda39709c2955", "5c88fa8cf4afda39709c2961"],
     "photo": "user-2.jpg",
     "password": "$2a$12$hP1h2pnNp7wgyZNRwPsOTeZuNzWBv7vHmsR3DT/OaPSUBQT.y0S.."
   },
@@ -23,6 +29,7 @@
     "email": "sophie@example.com",
     "role": "user",
     "active": true,
+    "favorites": ["5c88fa8cf4afda39709c2970", "5c88fa8cf4afda39709c2974"],
     "photo": "user-3.jpg",
     "password": "$2a$12$9nFqToiTmjgfFVJiQvjmreLt4k8X4gGYCETGapSZOb2hHa55t0dDq"
   },
